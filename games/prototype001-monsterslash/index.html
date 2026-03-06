@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,
+      maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- OG Tags for link preview -->
+<meta property="og:title" content="Monster Slash — Swipe to Slash!">
+<meta property="og:description" content="3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ariescar0326-sketch.github.io/prototype001-monsterslash/">
+<meta property="og:image" content="https://ariescar0326-sketch.github.io/prototype001-monsterslash/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Monster Slash — Swipe to Slash!">
+<meta name="twitter:description" content="3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves.">
+<meta name="twitter:image" content="https://ariescar0326-sketch.github.io/prototype001-monsterslash/og-image.png">
+
+<title>Monster Slash — Swipe to Slash!</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    position: fixed; width: 100%; height: 100%;
+    background: #0D0D0D;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+canvas { display: block; }
+
+/* === Game Container (all children position relative to this) === */
+#game-container {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+}
+
+/* === Desktop: force portrait phone frame === */
+@media (min-width: 600px) and (orientation: landscape) {
+    html, body {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        background: #000 !important;
+    }
+    body::before {
+        content: '';
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(ellipse at center, #1a1a2e 0%, #000 70%);
+        z-index: -1;
+    }
+    #game-container {
+        width: min(56.25vh, 100vw) !important;
+        height: 100vh !important;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 60px rgba(0,255,136,0.15);
+        border-left: 1px solid rgba(255,255,255,0.05);
+        border-right: 1px solid rgba(255,255,255,0.05);
+    }
+}
+
+/* === Swipe Trail Canvas === */
+#trail-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 9;
+}
+
+/* === HUD === */
+#hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
+    padding: env(safe-area-inset-top, 12px) 16px 0;
+}
+#hud-score {
+    position: absolute; top: env(safe-area-inset-top, 12px); left: 16px;
+    font-size: 1.6rem; font-weight: 700; color: #EAEAEA;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    font-variant-numeric: tabular-nums;
+}
+#hud-combo {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem; font-weight: 900; color: #00FF88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    opacity: 0; transition: opacity 0.2s;
+}
+#hud-hp {
+    position: absolute; top: env(safe-area-inset-top, 12px); right: 16px;
+    font-size: 1.4rem; color: #FF4444;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+#hud-judgment {
+    position: absolute; top: 40%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem; font-weight: 900;
+    opacity: 0; pointer-events: none;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+#hud-wave {
+    position: absolute; top: env(safe-area-inset-top, 12px); left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.9rem; font-weight: 600; color: #aaa;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+#hud-xp-bar {
+    position: absolute; bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 50%; height: 6px;
+    background: rgba(255,255,255,0.15); border-radius: 3px;
+    overflow: hidden;
+}
+#hud-xp-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(to right, #0F9FFF, #00FF88);
+    border-radius: 3px; transition: width 0.3s;
+}
+#hud-level {
+    position: absolute; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem; color: rgba(255,255,255,0.5);
+}
+
+/* === Screens === */
+.screen-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 20; pointer-events: auto;
+}
+#menu-screen { background: rgba(13,13,13,0.85); }
+#menu-screen h1 {
+    font-size: 2.8rem; font-weight: 900; color: #F4C430;
+    text-shadow: 0 0 30px rgba(244,196,48,0.4); margin-bottom: 16px;
+}
+#menu-screen .subtitle { font-size: 1rem; color: #999; margin-bottom: 40px; }
+#menu-screen .highscore { font-size: 1.1rem; color: #0F9FFF; margin-bottom: 8px; }
+#menu-screen .tap-hint { font-size: 1.2rem; color: #EAEAEA; opacity: 0.7; animation: pulse 1.5s infinite; }
+#gameover-screen { background: rgba(13,13,13,0.9); }
+#gameover-screen .final-score { font-size: 3rem; font-weight: 900; color: #EAEAEA; margin-bottom: 8px; }
+#gameover-screen .grade { font-size: 2rem; font-weight: 700; margin-bottom: 24px; }
+#gameover-screen .highscore { font-size: 1.1rem; color: #0F9FFF; margin-bottom: 32px; }
+#gameover-screen .tap-hint { font-size: 1.2rem; color: #EAEAEA; opacity: 0.7; animation: pulse 1.5s infinite; }
+
+/* Loading */
+#loading-screen { background: #0D0D0D; }
+#loading-screen .load-text { font-size: 1.4rem; color: #EAEAEA; }
+#loading-screen .load-bar-outer { width: 60%; height: 6px; background: #333; border-radius: 3px; margin-top: 16px; overflow: hidden; }
+#loading-screen .load-bar-inner { height: 100%; width: 0%; background: #F4C430; border-radius: 3px; transition: width 0.3s; }
+
+/* === Wave Announcement === */
+#wave-announce {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; align-items: center; justify-content: center;
+    z-index: 25; pointer-events: none;
+}
+#wave-announce .wave-text {
+    font-size: 3.5rem; font-weight: 900; color: #E94560;
+    text-shadow: 0 0 40px rgba(233,69,96,0.6), 0 0 80px rgba(233,69,96,0.3);
+    animation: waveAnnounce 1.5s ease-out forwards;
+}
+
+/* === Upgrade Selection === */
+#upgrade-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; align-items: center; justify-content: center;
+    z-index: 30; pointer-events: auto;
+    background: rgba(0,0,0,0.8);
+    flex-direction: column; gap: 16px;
+}
+#upgrade-screen .upgrade-title {
+    font-size: 1.8rem; font-weight: 900; color: #F4C430;
+    text-shadow: 0 0 20px rgba(244,196,48,0.4);
+    margin-bottom: 8px;
+}
+#upgrade-screen .upgrade-level {
+    font-size: 0.9rem; color: #0F9FFF; margin-bottom: 20px;
+}
+.upgrade-option {
+    background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 16px; padding: 20px 24px; width: 80%; max-width: 300px;
+    cursor: pointer; transition: all 0.2s;
+    text-align: center;
+}
+.upgrade-option:hover, .upgrade-option:active {
+    background: rgba(244,196,48,0.15); border-color: #F4C430;
+    transform: scale(1.03);
+}
+.upgrade-option .skill-name {
+    font-size: 1.3rem; font-weight: 700; color: #EAEAEA; margin-bottom: 6px;
+}
+.upgrade-option .skill-icon { font-size: 2rem; margin-bottom: 8px; }
+.upgrade-option .skill-desc { font-size: 0.85rem; color: #999; line-height: 1.4; }
+
+@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes judgmentFlash {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(0.5); }
+    15%  { transform: translate(-50%,-50%) scale(1.3); }
+    30%  { transform: translate(-50%,-50%) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(0.8) translateY(-30px); }
+}
+@keyframes slashLeft { 0% { opacity:1; transform: rotate(35deg) scaleY(0.3); } 30% { opacity:1; transform: rotate(35deg) scaleY(1.0); } 100% { opacity:0; transform: rotate(35deg) scaleY(1.0) translateY(-40px); } }
+@keyframes slashRight { 0% { opacity:1; transform: rotate(-35deg) scaleY(0.3); } 30% { opacity:1; transform: rotate(-35deg) scaleY(1.0); } 100% { opacity:0; transform: rotate(-35deg) scaleY(1.0) translateY(-40px); } }
+@keyframes slashCenter { 0% { opacity:1; transform: rotate(0deg) scaleY(0.3); } 30% { opacity:1; transform: rotate(0deg) scaleY(1.0); } 100% { opacity:0; transform: rotate(0deg) scaleY(1.0) translateY(-50px); } }
+@keyframes comboPulse { 0% { transform: translate(-50%,-50%) scale(1.8); color: #F4C430; } 50% { transform: translate(-50%,-50%) scale(1.0); } 100% { transform: translate(-50%,-50%) scale(1.0); } }
+@keyframes waveAnnounce {
+    0%   { opacity: 0; transform: scale(3); }
+    20%  { opacity: 1; transform: scale(1); }
+    70%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.8) translateY(-30px); }
+}
+@keyframes levelUpFlash {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(0.5); }
+    20%  { opacity: 1; transform: translate(-50%,-50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.0) translateY(-40px); }
+}
+
+.slash-effect {
+    position: absolute; width: 8px; height: 120px;
+    pointer-events: none; z-index: 12; border-radius: 4px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), #F4C430, rgba(255,255,255,0));
+    box-shadow: 0 0 20px rgba(244,196,48,0.8), 0 0 40px rgba(244,196,48,0.4); opacity: 0;
+}
+.slash-effect.good {
+    background: linear-gradient(to bottom, rgba(255,255,255,0), #FFFFFF, rgba(255,255,255,0));
+    box-shadow: 0 0 15px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.3);
+}
+
+/* Progress Bar */
+#progress-bar { position: absolute; left: 8px; top: 15%; bottom: 20%; width: 22px; z-index: 11; pointer-events: none; }
+#progress-track { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; transform: translateX(-50%); background: rgba(255,255,255,0.15); border-radius: 2px; }
+#progress-fill { position: absolute; left: 50%; bottom: 0; width: 4px; height: 0%; transform: translateX(-50%); background: linear-gradient(to top, #F4C430, #FF6B6B); border-radius: 2px; transition: height 0.3s ease-out; }
+#progress-icon { position: absolute; left: 50%; bottom: 0%; transform: translate(-50%, 50%); font-size: 14px; transition: bottom 0.3s ease-out; filter: drop-shadow(0 0 4px rgba(244,196,48,0.8)); }
+#progress-start, #progress-end { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+#progress-start { bottom: -18px; }
+#progress-end { top: -18px; }
+#progress-time { position: absolute; left: 50%; bottom: -32px; transform: translateX(-50%); font-size: 9px; color: rgba(255,255,255,0.35); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Wave 2 marker on progress bar */
+#progress-wave2 { position: absolute; left: -2px; right: -2px; height: 2px; background: #E94560; top: 25%; /* 60/80 = 75% from bottom = 25% from top */ }
+#progress-wave2-label { position: absolute; left: 24px; top: 23%; font-size: 8px; color: #E94560; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+
+<!-- Swipe Trail Canvas -->
+<canvas id="trail-canvas"></canvas>
+
+<!-- Loading Screen -->
+<div id="loading-screen" class="screen-overlay">
+    <div class="load-text">Loading...</div>
+    <div class="load-bar-outer"><div class="load-bar-inner" id="load-bar"></div></div>
+</div>
+
+<!-- Menu Screen -->
+<div id="menu-screen" class="screen-overlay" style="display:none;">
+    <h1>MONSTER SLASH</h1>
+    <div class="subtitle">Swipe to slash!</div>
+    <div class="highscore" id="menu-highscore">BEST: 0</div>
+    <div class="tap-hint">TAP TO START</div>
+</div>
+
+<!-- Game Over Screen -->
+<div id="gameover-screen" class="screen-overlay" style="display:none;">
+    <div class="final-score" id="go-score">0</div>
+    <div class="grade" id="go-grade">D</div>
+    <div class="highscore" id="go-highscore">BEST: 0</div>
+    <div class="tap-hint">TAP TO RETRY</div>
+</div>
+
+<!-- Wave Announcement -->
+<div id="wave-announce"><div class="wave-text" id="wave-text"></div></div>
+
+<!-- Upgrade Selection -->
+<div id="upgrade-screen">
+    <div class="upgrade-title">LEVEL UP!</div>
+    <div class="upgrade-level" id="upgrade-level-text">Level 2</div>
+    <div class="upgrade-option" id="upgrade-opt-0">
+        <div class="skill-icon" id="skill-icon-0"></div>
+        <div class="skill-name" id="skill-name-0"></div>
+        <div class="skill-desc" id="skill-desc-0"></div>
+    </div>
+    <div class="upgrade-option" id="upgrade-opt-1">
+        <div class="skill-icon" id="skill-icon-1"></div>
+        <div class="skill-name" id="skill-name-1"></div>
+        <div class="skill-desc" id="skill-desc-1"></div>
+    </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" style="display:none;">
+    <div id="hud-score">0</div>
+    <div id="hud-hp">♥♥♥</div>
+    <div id="hud-wave">WAVE 1</div>
+    <div id="hud-combo"></div>
+    <div id="hud-judgment"></div>
+    <div id="hud-xp-bar"><div id="hud-xp-fill"></div></div>
+    <div id="hud-level">LV.1</div>
+    <div id="progress-bar">
+        <div id="progress-track"></div>
+        <div id="progress-fill"></div>
+        <div id="progress-icon">⚔️</div>
+        <div id="progress-end">🏁</div>
+        <div id="progress-start">GO</div>
+        <div id="progress-time">0:00</div>
+        <div id="progress-wave2"></div>
+        <div id="progress-wave2-label">W2</div>
+    </div>
+</div>
+</div><!-- end game-container -->
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+
+// ============================================================
+// CONFIG
+// ============================================================
+const CONFIG = {
+    cameraFOV: 60,
+    cameraPos: { x: 0, y: 3.5, z: 6 },
+    cameraLookAt: { x: 0, y: 0.5, z: -5 },
+
+    playerPos: { x: 0, y: 0, z: 0 },
+    playerScale: 1.0,
+
+    enemySpawnZ: -28,
+    enemyTypes: ['demon', 'bunny', 'blob'],
+    enemyPoolSize: 8, // increased for Wave 2
+    enemyBaseSpeed: 5.0,
+    enemyScales: { demon: 1.2, bunny: 1.0, blob: 0.8 },
+    enemyLanes: { LEFT: -3.0, CENTER: 0.0, RIGHT: 3.0 },
+
+    perfectZone: { min: 1.5, max: 4.0 },
+    goodZone: { min: 4.0, max: 6.5 },
+    damageDist: 1.0,
+
+    perfectScore: 100,
+    goodScore: 50,
+    comboMultBase: 1.0,
+    comboMultStep: 0.1,
+
+    startHP: 3,
+
+    swipeMinDist: 30,
+    swipeMaxTime: 300,
+
+    // === WAVE SYSTEM ===
+    // Wave 1: 0-60s, Wave 2: 60-80s (WAVE! at 60s, 2x speed + enemies)
+    totalDuration: 80, // total run = 80s
+    wave2Start: 60,    // Wave 2 starts at 60s
+    wave2SpeedMult: 2.0,
+    wave2MaxSimultMult: 2,
+
+    // Difficulty ramp (Wave 1 only, Wave 2 overrides)
+    difficulty: [
+        { time:  0, spawnInterval: 2.0, maxSimultaneous: 1, speedMult: 1.0, directionsAllowed: ['CENTER'] },
+        { time: 10, spawnInterval: 1.5, maxSimultaneous: 2, speedMult: 1.2, directionsAllowed: ['LEFT','CENTER','RIGHT'] },
+        { time: 25, spawnInterval: 1.2, maxSimultaneous: 3, speedMult: 1.4, directionsAllowed: ['LEFT','CENTER','RIGHT'] },
+        { time: 40, spawnInterval: 0.9, maxSimultaneous: 3, speedMult: 1.6, directionsAllowed: ['LEFT','CENTER','RIGHT'] },
+    ],
+
+    // === XP / UPGRADE SYSTEM ===
+    // Enemy count estimate: Wave1 ~50 enemies, Wave2 ~40 = ~90 total
+    // XP: PERFECT=3, GOOD=2
+    // Level thresholds (cumulative): 8, 22, 42
+    // No miss all perfect: 50*3=150 XP → levels at ~3, ~8, ~14 kills → 3 upgrades ✓
+    // With many misses: still get 8 XP from ~4 kills → 1 upgrade guaranteed ✓
+    xpPerfect: 3,
+    xpGood: 2,
+    xpLevels: [8, 22, 42, 70, 110], // cumulative XP thresholds
+
+    groundSpeed: 6.0,
+    envObjectCount: 24,
+    envSpawnZMin: -35, envSpawnZMax: -20,
+    envRecycleZ: 8,
+
+    backgroundColor: 0x2a2a4e,
+    groundColor: 0x3a3a5e,
+    fogColor: 0x2a2a4e, fogNear: 20, fogFar: 45,
+    ambientColor: 0x8899cc, ambientIntensity: 1.8,
+    dirLightColor: 0xFFEEDD, dirLightIntensity: 2.0,
+
+    killZoneRadius: 5.0,
+    killZoneColor: 0x0F9FFF,
+    killZoneDangerColor: 0xE94560,
+
+    roadWidth: 6.0,
+    roadColor: 0x4a4a6e,
+    roadLineColor: 0x6a6a8e,
+};
+
+// ============================================================
+// SKILL DEFINITIONS
+// ============================================================
+const SKILL_DEFS = [
+    { id: 'wider_slash',   icon: '⚔️', name: 'Wider Slash',    desc: 'Attack range +30%',           apply: () => { CONFIG.perfectZone.max *= 1.3; CONFIG.goodZone.max *= 1.3; } },
+    { id: 'slow_aura',     icon: '🐌', name: 'Slow Aura',      desc: 'Enemies move 20% slower',     apply: () => { state.skillMods.speedMult *= 0.8; } },
+    { id: 'life_steal',    icon: '💚', name: 'Life Steal',      desc: '25% chance to heal on kill',   apply: () => { state.skillMods.lifeStealChance += 0.25; } },
+    { id: 'score_boost',   icon: '💰', name: 'Score Boost',     desc: '+50% score multiplier',       apply: () => { state.skillMods.scoreMult += 0.5; } },
+    { id: 'shield',        icon: '🛡️', name: 'Shield',          desc: 'Block next 2 damage',         apply: () => { state.skillMods.shield += 2; } },
+    { id: 'combo_guard',   icon: '🔗', name: 'Combo Guard',     desc: 'Keep combo on MISS',          apply: () => { state.skillMods.comboGuard = true; } },
+    { id: 'blast_wave',    icon: '💥', name: 'Blast Wave',      desc: 'Kills splash to nearby foes',  apply: () => { state.skillMods.blastRadius = 3.0; } },
+    { id: 'crit_strike',   icon: '⚡', name: 'Critical Strike', desc: '25% chance for 3x score',     apply: () => { state.skillMods.critChance += 0.25; } },
+];
+
+// ============================================================
+// ASSET PATHS
+// ============================================================
+const ASSET_BASE = './assets/';
+const MODEL_PATHS = {
+    player: ASSET_BASE + 'Characters_Shaun.gltf',
+    demon:  ASSET_BASE + 'Demon.gltf',
+    bunny:  ASSET_BASE + 'Bunny.gltf',
+    blob:   ASSET_BASE + 'GreenBlob.gltf',
+};
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const GameState = { LOADING: 'loading', MENU: 'menu', PLAYING: 'playing', GAME_OVER: 'gameover', UPGRADING: 'upgrading' };
+
+const state = {
+    current: GameState.LOADING,
+    score: 0,
+    highScore: parseInt(localStorage.getItem('monsterslash_highScore') || '0'),
+    hp: CONFIG.startHP,
+    combo: 0,
+    maxCombo: 0,
+    gameTime: 0,
+    spawnTimer: 0,
+    difficultyIndex: 0,
+    activeEnemies: [],
+    gameOverCooldown: 0,
+    timeScale: 1.0,
+
+    // Wave
+    wave: 1,
+    waveAnnounced: false,
+
+    // XP / Level
+    xp: 0,
+    level: 0,
+    pendingUpgrade: false,
+    acquiredSkills: [],
+    skillMods: {},
+};
+
+function resetSkillMods() {
+    state.skillMods = {
+        speedMult: 1.0,
+        lifeStealChance: 0,
+        scoreMult: 1.0,
+        shield: 0,
+        comboGuard: false,
+        blastRadius: 0,
+        critChance: 0,
+    };
+}
+
+// ============================================================
+// DOM REFS
+// ============================================================
+const dom = {
+    loading:   document.getElementById('loading-screen'),
+    loadBar:   document.getElementById('load-bar'),
+    menu:      document.getElementById('menu-screen'),
+    menuHigh:  document.getElementById('menu-highscore'),
+    gameover:  document.getElementById('gameover-screen'),
+    goScore:   document.getElementById('go-score'),
+    goGrade:   document.getElementById('go-grade'),
+    goHigh:    document.getElementById('go-highscore'),
+    hud:       document.getElementById('hud'),
+    hudScore:  document.getElementById('hud-score'),
+    hudHP:     document.getElementById('hud-hp'),
+    hudCombo:  document.getElementById('hud-combo'),
+    hudJudge:  document.getElementById('hud-judgment'),
+    hudWave:   document.getElementById('hud-wave'),
+    hudXpFill: document.getElementById('hud-xp-fill'),
+    hudLevel:  document.getElementById('hud-level'),
+    progressFill: document.getElementById('progress-fill'),
+    progressIcon: document.getElementById('progress-icon'),
+    progressTime: document.getElementById('progress-time'),
+    waveAnnounce: document.getElementById('wave-announce'),
+    waveText:  document.getElementById('wave-text'),
+    upgradeScreen: document.getElementById('upgrade-screen'),
+    upgradeLevelText: document.getElementById('upgrade-level-text'),
+    trailCanvas: document.getElementById('trail-canvas'),
+};
+
+// ============================================================
+// THREE.JS SETUP
+// ============================================================
+const clock = new THREE.Clock();
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(CONFIG.backgroundColor);
+scene.fog = new THREE.Fog(CONFIG.fogColor, CONFIG.fogNear, CONFIG.fogFar);
+
+const gc = document.getElementById('game-container');
+const camera = new THREE.PerspectiveCamera(CONFIG.cameraFOV, gc.clientWidth / gc.clientHeight, 0.1, 100);
+camera.position.set(CONFIG.cameraPos.x, CONFIG.cameraPos.y, CONFIG.cameraPos.z);
+camera.lookAt(CONFIG.cameraLookAt.x, CONFIG.cameraLookAt.y, CONFIG.cameraLookAt.z);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(gc.clientWidth, gc.clientHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+gc.prepend(renderer.domElement);
+
+const ambientLight = new THREE.AmbientLight(CONFIG.ambientColor, CONFIG.ambientIntensity);
+scene.add(ambientLight);
+const hemiLight = new THREE.HemisphereLight(0xaabbee, 0x556644, 1.0);
+scene.add(hemiLight);
+const dirLight = new THREE.DirectionalLight(CONFIG.dirLightColor, CONFIG.dirLightIntensity);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
+
+// ============================================================
+// GESTURE SYSTEM (Architecture for future skill gestures)
+// ============================================================
+// Modular gesture recognition. Currently uses 'trailHit' + 'swipe'.
+// To add future gesture-based skills:
+//   1. Create recognizer: { name, priority, recognize(input), execute(result) }
+//   2. GestureSystem.register(recognizer)
+//   3. Higher priority = checked first
+//
+// Future gesture types planned (register when skills acquired):
+//   - circle:     circular drag      → AoE blast skill
+//   - zigzag:     Z-shape            → lightning chain skill
+//   - hold:       long press 500ms+  → charge attack
+//   - double_tap: <200ms gap         → dash / blink
+//   - cross:      X-shape            → cross slash (multi-hit)
+//   - heart/star: complex shapes     → ultimate skills
+const GestureSystem = {
+    recognizers: [],
+    register(rec) {
+        this.recognizers.push(rec);
+        this.recognizers.sort((a, b) => b.priority - a.priority);
+    },
+    unregister(name) {
+        this.recognizers = this.recognizers.filter(r => r.name !== name);
+    },
+    process(input) {
+        for (const r of this.recognizers) {
+            const result = r.recognize(input);
+            if (result) return { gesture: r.name, result, execute: () => r.execute(result, input) };
+        }
+        return null;
+    }
+};
+
+// === Trail Hit Recognizer (Fruit Ninja style) – priority 20 (checked first) ===
+GestureSystem.register({
+    name: 'trailHit',
+    priority: 20,
+    recognize(input) {
+        if (input.duration > CONFIG.swipeMaxTime || input.dist < CONFIG.swipeMinDist) return null;
+        if (input.points.length < 2) return null;
+        const hitRadius = 60; // px tolerance
+        let bestEnemy = null, bestDist3D = Infinity;
+        for (const enemy of state.activeEnemies) {
+            if (enemy.hit) continue;
+            const dist3D = enemy.model.position.distanceTo(player.model.position);
+            if (dist3D > CONFIG.goodZone.max) continue;
+            const sp = projectToScreen(enemy.model.position);
+            // Check if trail passes near enemy's screen position
+            for (let i = 1; i < input.points.length; i++) {
+                const d = ptSegDist(sp.x, sp.y, input.points[i-1].x, input.points[i-1].y, input.points[i].x, input.points[i].y);
+                if (d < hitRadius && dist3D < bestDist3D) {
+                    bestEnemy = enemy; bestDist3D = dist3D; break;
+                }
+            }
+        }
+        if (!bestEnemy) return null;
+        return { enemy: bestEnemy, dist3D: bestDist3D };
+    },
+    execute(result) {
+        const enemy = result.enemy, dist3D = result.dist3D;
+        const ex = enemy.model.position.x;
+        lastSwipeDir = ex < -1.5 ? 'LEFT' : ex > 1.5 ? 'RIGHT' : 'CENTER';
+        if (player) player.play('Run_Slash', 0.1, false);
+        setTimeout(() => { if (player && state.current === GameState.PLAYING) player.play('Run', 0.2); }, 400);
+        if (dist3D >= CONFIG.perfectZone.min && dist3D <= CONFIG.perfectZone.max) onPerfect(enemy);
+        else if (dist3D >= CONFIG.goodZone.min && dist3D <= CONFIG.goodZone.max) onGood(enemy);
+        else if (dist3D < CONFIG.perfectZone.min) onGood(enemy);
+        else onMiss();
+    }
+});
+
+// === Directional Swipe Recognizer – priority 10 (fallback) ===
+GestureSystem.register({
+    name: 'swipe',
+    priority: 10,
+    recognize(input) {
+        if (input.duration > CONFIG.swipeMaxTime || input.dist < CONFIG.swipeMinDist) return null;
+        const angle = Math.atan2(-input.dy, input.dx);
+        let dir;
+        if (angle > Math.PI/4 && angle < 3*Math.PI/4) dir = 'UP';
+        else if (angle >= -Math.PI/4 && angle <= Math.PI/4) dir = 'RIGHT';
+        else if (angle >= -3*Math.PI/4 && angle <= -Math.PI/4) return null;
+        else dir = 'LEFT';
+        return { direction: dir };
+    },
+    execute(result) {
+        handleSwipe(result.direction);
+    }
+});
+
+// Project 3D world position → 2D screen coordinates
+function projectToScreen(worldPos) {
+    const v = new THREE.Vector3().copy(worldPos);
+    v.y += 0.8; // aim at torso, not feet
+    v.project(camera);
+    return { x: (v.x * 0.5 + 0.5) * gc.clientWidth, y: (-v.y * 0.5 + 0.5) * gc.clientHeight };
+}
+
+// Point-to-segment distance (for trail intersection)
+function ptSegDist(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay, lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+// ============================================================
+// SWIPE TRAIL (2D Canvas overlay)
+// ============================================================
+const trailCtx = dom.trailCanvas.getContext('2d');
+let trailPoints = [];
+
+function resizeTrailCanvas() {
+    const cw = gc.clientWidth, ch = gc.clientHeight;
+    dom.trailCanvas.width = cw * window.devicePixelRatio;
+    dom.trailCanvas.height = ch * window.devicePixelRatio;
+    dom.trailCanvas.style.width = cw + 'px';
+    dom.trailCanvas.style.height = ch + 'px';
+    trailCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+resizeTrailCanvas();
+
+function addTrailPoint(x, y) {
+    trailPoints.push({ x, y, time: performance.now(), alpha: 1 });
+}
+
+function updateTrail() {
+    trailCtx.clearRect(0, 0, dom.trailCanvas.width, dom.trailCanvas.height);
+    const now = performance.now();
+    const trailDuration = 200; // ms
+
+    // Remove old points
+    trailPoints = trailPoints.filter(p => now - p.time < trailDuration);
+    if (trailPoints.length < 2) return;
+
+    for (let i = 1; i < trailPoints.length; i++) {
+        const p0 = trailPoints[i - 1];
+        const p1 = trailPoints[i];
+        const age = (now - p1.time) / trailDuration;
+        const alpha = 1 - age;
+        const width = (1 - age) * 6 + 2;
+
+        trailCtx.beginPath();
+        trailCtx.moveTo(p0.x, p0.y);
+        trailCtx.lineTo(p1.x, p1.y);
+        trailCtx.strokeStyle = `rgba(244, 196, 48, ${alpha * 0.8})`;
+        trailCtx.lineWidth = width;
+        trailCtx.lineCap = 'round';
+        trailCtx.stroke();
+
+        // Glow layer
+        trailCtx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+        trailCtx.lineWidth = width + 4;
+        trailCtx.stroke();
+    }
+}
+
+// ============================================================
+// GROUND + ROAD
+// ============================================================
+const groundGeo = new THREE.PlaneGeometry(30, 100, 1, 1);
+const groundMat = new THREE.MeshStandardMaterial({ color: CONFIG.groundColor, roughness: 0.8 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(0, -0.02, -25);
+scene.add(ground);
+
+const roadGeo = new THREE.PlaneGeometry(CONFIG.roadWidth, 100, 1, 1);
+const roadMat = new THREE.MeshStandardMaterial({ color: CONFIG.roadColor, roughness: 0.6 });
+const road = new THREE.Mesh(roadGeo, roadMat);
+road.rotation.x = -Math.PI / 2;
+road.position.set(0, -0.01, -25);
+scene.add(road);
+
+const roadEdgeMat = new THREE.LineBasicMaterial({ color: 0x8888aa, transparent: true, opacity: 0.5 });
+for (const side of [-1, 1]) {
+    const x = side * CONFIG.roadWidth / 2;
+    const pts = [new THREE.Vector3(x, 0.01, -50), new THREE.Vector3(x, 0.01, 10)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), roadEdgeMat));
+}
+
+const gridGroup = new THREE.Group();
+const lineMat = new THREE.LineBasicMaterial({ color: CONFIG.roadLineColor, transparent: true, opacity: 0.35 });
+for (let i = 0; i < 40; i++) {
+    const z = -40 + i * 2;
+    const pts = [new THREE.Vector3(-CONFIG.roadWidth/2 + 0.3, 0.01, z), new THREE.Vector3(CONFIG.roadWidth/2 - 0.3, 0.01, z)];
+    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+}
+const centerLineMat = new THREE.LineBasicMaterial({ color: 0xaaaacc, transparent: true, opacity: 0.25 });
+for (let i = 0; i < 25; i++) {
+    const z = -50 + i * 4;
+    const pts = [new THREE.Vector3(0, 0.01, z), new THREE.Vector3(0, 0.01, z + 2)];
+    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), centerLineMat));
+}
+scene.add(gridGroup);
+
+// Kill zone
+const killZoneGeo = new THREE.CircleGeometry(CONFIG.killZoneRadius, 64);
+const killZoneMat = new THREE.MeshBasicMaterial({ color: CONFIG.killZoneColor, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+const killZoneMesh = new THREE.Mesh(killZoneGeo, killZoneMat);
+killZoneMesh.rotation.x = -Math.PI / 2;
+killZoneMesh.position.set(0, 0.02, 0);
+scene.add(killZoneMesh);
+
+const killZoneRingGeo = new THREE.RingGeometry(CONFIG.killZoneRadius - 0.1, CONFIG.killZoneRadius, 64);
+const killZoneRingMat = new THREE.MeshBasicMaterial({ color: CONFIG.killZoneColor, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+const killZoneRingMesh = new THREE.Mesh(killZoneRingGeo, killZoneRingMat);
+killZoneRingMesh.rotation.x = -Math.PI / 2;
+killZoneRingMesh.position.set(0, 0.025, 0);
+scene.add(killZoneRingMesh);
+
+const perfectZoneGeo = new THREE.RingGeometry(CONFIG.perfectZone.min, CONFIG.perfectZone.max, 64);
+const perfectZoneMat = new THREE.MeshBasicMaterial({ color: 0xF4C430, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+const perfectZoneMesh = new THREE.Mesh(perfectZoneGeo, perfectZoneMat);
+perfectZoneMesh.rotation.x = -Math.PI / 2;
+perfectZoneMesh.position.set(0, 0.03, 0);
+scene.add(perfectZoneMesh);
+
+// Environment objects
+const envPool = [];
+const envGeos = [new THREE.BoxGeometry(0.5,1.5,0.5), new THREE.ConeGeometry(0.6,2,6), new THREE.CylinderGeometry(0.2,0.4,1.2,6), new THREE.SphereGeometry(0.4,8,6)];
+const envMats = [new THREE.MeshStandardMaterial({color:0x2d5a27,roughness:0.8}), new THREE.MeshStandardMaterial({color:0x1a4020,roughness:0.8}), new THREE.MeshStandardMaterial({color:0x3a3a3a,roughness:0.9})];
+for (let i = 0; i < CONFIG.envObjectCount; i++) {
+    const mesh = new THREE.Mesh(envGeos[Math.floor(Math.random()*envGeos.length)], envMats[Math.floor(Math.random()*envMats.length)]);
+    resetEnvObject(mesh);
+    scene.add(mesh);
+    envPool.push(mesh);
+}
+function resetEnvObject(mesh) {
+    const side = Math.random() > 0.5 ? 1 : -1;
+    mesh.position.set(side*(5+Math.random()*4), mesh.geometry.parameters?.height ? mesh.geometry.parameters.height/2 : 0.5, CONFIG.envSpawnZMin+Math.random()*(CONFIG.envSpawnZMax-CONFIG.envSpawnZMin));
+    mesh.scale.setScalar(0.5+Math.random()*1.0);
+}
+
+// ============================================================
+// GLTF LOADING
+// ============================================================
+const loader = new GLTFLoader();
+const loadedModels = {};
+let modelsReady = false;
+
+function loadModel(key, path) {
+    return new Promise((resolve, reject) => {
+        loader.load(path, (gltf) => { loadedModels[key] = gltf; resolve(gltf); }, undefined, (err) => { console.warn(`Failed to load ${key}:`, err); reject(err); });
+    });
+}
+
+async function loadAllModels() {
+    const keys = Object.keys(MODEL_PATHS);
+    let loaded = 0;
+    for (const key of keys) {
+        try { await loadModel(key, MODEL_PATHS[key]); } catch(e) { loadedModels[key] = createPlaceholder(key); }
+        loaded++;
+        dom.loadBar.style.width = `${(loaded/keys.length)*100}%`;
+    }
+    modelsReady = true;
+}
+
+function createPlaceholder(key) {
+    const colors = { player: 0x0F9FFF, demon: 0xE94560, bunny: 0xFFAA44, blob: 0x44FF44 };
+    const geo = key === 'player' ? new THREE.CapsuleGeometry(0.3,0.8,4,8) : new THREE.SphereGeometry(0.4,8,8);
+    const mat = new THREE.MeshStandardMaterial({ color: colors[key] || 0xFFFFFF });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.y = key === 'player' ? 0.7 : 0.4;
+    return { scene: mesh, animations: [], _isPlaceholder: true };
+}
+
+// ============================================================
+// ANIMATED CHARACTER CLASS
+// ============================================================
+class AnimatedCharacter {
+    constructor(gltfData, scale = 1.0) {
+        if (gltfData._isPlaceholder) {
+            this.model = gltfData.scene.clone(); this.mixer = null; this.actions = {}; this._isPlaceholder = true;
+        } else {
+            this.model = SkeletonUtils.clone(gltfData.scene);
+            this.mixer = new THREE.AnimationMixer(this.model);
+            this.actions = {};
+            this._isPlaceholder = false;
+            gltfData.animations.forEach(clip => { this.actions[clip.name] = this.mixer.clipAction(clip); });
+        }
+        this.model.scale.setScalar(scale);
+        this.currentAction = null;
+    }
+    play(name, fadeIn = 0.2, loop = true) {
+        if (this._isPlaceholder) return;
+        const aliases = { 'Run': ['Run','Walk','Gallop'], 'HitReact': ['HitReact','HitRecieve','Hit'], 'Death': ['Death','Die'] };
+        let action = this.actions[name];
+        if (!action && aliases[name]) { for (const alt of aliases[name]) { if (this.actions[alt]) { action = this.actions[alt]; break; } } }
+        if (!action) { const key = Object.keys(this.actions).find(k => k.toLowerCase().includes(name.toLowerCase())); if (key) return this.play(key, fadeIn, loop); return; }
+        if (this.currentAction === action && action.isRunning()) return;
+        if (this.currentAction) this.currentAction.fadeOut(fadeIn);
+        action.reset().fadeIn(fadeIn);
+        if (!loop) { action.setLoop(THREE.LoopOnce); action.clampWhenFinished = true; }
+        action.play();
+        this.currentAction = action;
+    }
+    update(dt) { if (this.mixer) this.mixer.update(dt); }
+    listAnimations() { return Object.keys(this.actions); }
+}
+
+// ============================================================
+// PLAYER
+// ============================================================
+let player = null;
+function setupPlayer() {
+    player = new AnimatedCharacter(loadedModels.player, CONFIG.playerScale);
+    player.model.position.set(CONFIG.playerPos.x, CONFIG.playerPos.y, CONFIG.playerPos.z);
+    player.model.rotation.y = Math.PI;
+    scene.add(player.model);
+    player.play('Run');
+}
+
+// ============================================================
+// ENEMY POOL
+// ============================================================
+const enemyPools = {};
+const INACTIVE_POS = new THREE.Vector3(0, -100, 0);
+
+function setupEnemyPools() {
+    for (const type of CONFIG.enemyTypes) {
+        enemyPools[type] = [];
+        const scale = CONFIG.enemyScales[type] || 1.0;
+        for (let i = 0; i < CONFIG.enemyPoolSize; i++) {
+            const char = new AnimatedCharacter(loadedModels[type], scale);
+            char.model.position.copy(INACTIVE_POS);
+            char.active = false; char.lane = 'CENTER'; char.speed = CONFIG.enemyBaseSpeed; char.type = type;
+            scene.add(char.model);
+            enemyPools[type].push(char);
+        }
+    }
+}
+
+function getInactiveEnemy(type) { return (enemyPools[type] || []).find(e => !e.active) || null; }
+
+function spawnEnemy() {
+    const diff = getCurrentDifficulty();
+    if (state.activeEnemies.length >= diff.maxSimultaneous) return;
+    const type = CONFIG.enemyTypes[Math.floor(Math.random() * CONFIG.enemyTypes.length)];
+    const enemy = getInactiveEnemy(type);
+    if (!enemy) return;
+    const dirs = diff.directionsAllowed;
+    const lane = dirs[Math.floor(Math.random() * dirs.length)];
+    const laneX = CONFIG.enemyLanes[lane];
+    const jitter = (Math.random() - 0.5) * 1.0;
+    enemy.model.position.set(laneX + jitter, 0, CONFIG.enemySpawnZ);
+    enemy.model.rotation.y = 0;
+    enemy.active = true; enemy.lane = lane;
+    enemy.speed = CONFIG.enemyBaseSpeed * diff.speedMult * state.skillMods.speedMult;
+    enemy.hit = false;
+    enemy.play('Run');
+    state.activeEnemies.push(enemy);
+}
+
+function deactivateEnemy(enemy) {
+    enemy.active = false;
+    enemy.model.position.copy(INACTIVE_POS);
+    const idx = state.activeEnemies.indexOf(enemy);
+    if (idx !== -1) state.activeEnemies.splice(idx, 1);
+}
+
+// ============================================================
+// DIFFICULTY (Wave-aware)
+// ============================================================
+function getCurrentDifficulty() {
+    let d = { ...CONFIG.difficulty[0] };
+    for (const level of CONFIG.difficulty) {
+        if (state.gameTime >= level.time) d = { ...level };
+    }
+    // Wave 2 override
+    if (state.wave >= 2) {
+        d.speedMult *= CONFIG.wave2SpeedMult;
+        d.maxSimultaneous *= CONFIG.wave2MaxSimultMult;
+        d.spawnInterval *= 0.5;
+    }
+    return d;
+}
+
+// ============================================================
+// AUDIO
+// ============================================================
+let actx;
+function ensureAudio() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+}
+// Unlock audio on ANY user interaction (iOS Safari, Chrome, Samsung Browser)
+['touchstart', 'touchend', 'click', 'pointerdown', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, ensureAudio, { once: false, passive: true });
+});
+
+function tone(freq, dur = 0.15, type = 'sine', vol = 0.3) {
+    try {
+        const ctx = ensureAudio();
+        if (!ctx || ctx.state === 'suspended') return;
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = type; o.frequency.value = freq;
+        g.gain.setValueAtTime(vol, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
+    } catch(e) {}
+}
+
+const SFX = {
+    perfect:   () => { tone(880, 0.12, 'sawtooth', 0.3); tone(1320, 0.1, 'sine', 0.15); },
+    good:      () => tone(440, 0.1, 'triangle', 0.25),
+    miss:      () => tone(200, 0.08, 'sine', 0.15),
+    damage:    () => { tone(100, 0.3, 'square', 0.3); tone(80, 0.4, 'sawtooth', 0.15); },
+    death:     () => { tone(300, 0.1, 'square', 0.3); setTimeout(() => tone(200, 0.15, 'square', 0.25), 100); setTimeout(() => tone(100, 0.4, 'sawtooth', 0.3), 200); },
+    combo5:    () => { tone(523, 0.1, 'sine', 0.2); setTimeout(() => tone(659, 0.1, 'sine', 0.2), 80); setTimeout(() => tone(784, 0.15, 'sine', 0.25), 160); },
+    menuTap:   () => tone(660, 0.05, 'sine', 0.15),
+    levelUp:   () => { tone(523, 0.1, 'sine', 0.25); setTimeout(() => tone(659, 0.1, 'sine', 0.25), 100); setTimeout(() => tone(784, 0.12, 'sine', 0.3), 200); setTimeout(() => tone(1047, 0.2, 'sine', 0.3), 300); },
+    wave:      () => { tone(200, 0.3, 'sawtooth', 0.4); setTimeout(() => tone(400, 0.3, 'sawtooth', 0.3), 200); setTimeout(() => tone(600, 0.5, 'square', 0.3), 400); },
+};
+
+// ============================================================
+// SWIPE INPUT (with trail)
+// ============================================================
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+let isTouching = false;
+
+function onTouchStart(e) {
+    // Don't prevent default during upgrade selection — allows click/tap on buttons
+    if (state.current === GameState.UPGRADING) return;
+    e.preventDefault();
+    if (state.current === GameState.MENU) { SFX.menuTap(); setState(GameState.PLAYING); return; }
+    if (state.current === GameState.GAME_OVER) { if (state.gameOverCooldown > 0) return; SFX.menuTap(); setState(GameState.PLAYING); return; }
+    const t = e.touches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY;
+    touchStartTime = Date.now();
+    isTouching = true;
+    trailPoints = [];
+    addTrailPoint(t.clientX, t.clientY);
+}
+
+function onTouchMove(e) {
+    if (state.current === GameState.UPGRADING) return;
+    e.preventDefault();
+    if (!isTouching || state.current !== GameState.PLAYING) return;
+    const t = e.touches[0];
+    addTrailPoint(t.clientX, t.clientY);
+}
+
+function onTouchEnd(e) {
+    if (state.current === GameState.UPGRADING) return;
+    e.preventDefault();
+    if (!isTouching || state.current !== GameState.PLAYING) { isTouching = false; return; }
+    isTouching = false;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    processGestureInput(dx, dy, dt, dist);
+}
+
+// Mouse fallback
+let mouseTrail = false;
+function onMouseDown(e) {
+    if (state.current === GameState.MENU) { SFX.menuTap(); setState(GameState.PLAYING); return; }
+    if (state.current === GameState.GAME_OVER) { if (state.gameOverCooldown > 0) return; SFX.menuTap(); setState(GameState.PLAYING); return; }
+    touchStartX = e.clientX; touchStartY = e.clientY; touchStartTime = Date.now(); isTouching = true;
+    mouseTrail = true; trailPoints = []; addTrailPoint(e.clientX, e.clientY);
+}
+function onMouseMove(e) {
+    if (!mouseTrail || state.current !== GameState.PLAYING) return;
+    addTrailPoint(e.clientX, e.clientY);
+}
+function onMouseUp(e) {
+    mouseTrail = false;
+    if (!isTouching || state.current !== GameState.PLAYING) { isTouching = false; return; }
+    isTouching = false;
+    const dx = e.clientX - touchStartX; const dy = e.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime; const dist = Math.sqrt(dx*dx+dy*dy);
+    processGestureInput(dx, dy, dt, dist);
+}
+
+// Unified gesture processing – tries all registered recognizers
+function processGestureInput(dx, dy, dt, dist) {
+    const input = { points: [...trailPoints], dx, dy, dist, duration: dt };
+    const match = GestureSystem.process(input);
+    if (match) { match.execute(); }
+}
+
+document.addEventListener('touchstart', onTouchStart, { passive: false });
+document.addEventListener('touchmove', onTouchMove, { passive: false });
+document.addEventListener('touchend', onTouchEnd, { passive: false });
+document.addEventListener('mousedown', onMouseDown);
+document.addEventListener('mousemove', onMouseMove);
+document.addEventListener('mouseup', onMouseUp);
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+    if (state.current === GameState.MENU || state.current === GameState.GAME_OVER) {
+        if (e.code === 'Space') { if (state.current === GameState.GAME_OVER && state.gameOverCooldown > 0) return; setState(GameState.PLAYING); } return;
+    }
+    if (state.current !== GameState.PLAYING) return;
+    switch (e.code) {
+        case 'ArrowLeft': case 'KeyA': handleSwipe('LEFT'); break;
+        case 'ArrowRight': case 'KeyD': handleSwipe('RIGHT'); break;
+        case 'ArrowUp': case 'KeyW': case 'Space': handleSwipe('UP'); break;
+    }
+});
+
+// ============================================================
+// SWIPE → ATTACK LOGIC
+// ============================================================
+let lastSwipeDir = 'CENTER';
+
+function handleSwipe(swipeDir) {
+    lastSwipeDir = swipeDir === 'UP' ? 'CENTER' : swipeDir;
+
+    // ALWAYS play attack animation (even on empty swing)
+    if (player) player.play('Run_Slash', 0.1, false);
+    setTimeout(() => { if (player && state.current === GameState.PLAYING) player.play('Run', 0.2); }, 400);
+
+    // Find closest enemy in matching direction within range
+    let bestEnemy = null, bestDist = Infinity;
+    for (const enemy of state.activeEnemies) {
+        if (enemy.hit) continue;
+        const ex = enemy.model.position.x;
+        let enemyDir;
+        if (Math.abs(ex) < 1.5) enemyDir = 'CENTER';
+        else if (ex < 0) enemyDir = 'LEFT';
+        else enemyDir = 'RIGHT';
+        const dirMatch = (swipeDir === 'LEFT' && enemyDir === 'LEFT') || (swipeDir === 'RIGHT' && enemyDir === 'RIGHT') || (swipeDir === 'UP' && enemyDir === 'CENTER');
+        if (!dirMatch) continue;
+        const dist = enemy.model.position.distanceTo(player.model.position);
+        if (dist < bestDist && dist <= CONFIG.goodZone.max) { bestDist = dist; bestEnemy = enemy; }
+    }
+
+    if (!bestEnemy) { onMiss(); return; }
+
+    if (bestDist >= CONFIG.perfectZone.min && bestDist <= CONFIG.perfectZone.max) onPerfect(bestEnemy);
+    else if (bestDist >= CONFIG.goodZone.min && bestDist <= CONFIG.goodZone.max) onGood(bestEnemy);
+    else if (bestDist < CONFIG.perfectZone.min) onGood(bestEnemy);
+    else onMiss();
+}
+
+function onPerfect(enemy) {
+    let scoreGain = Math.floor(CONFIG.perfectScore * (CONFIG.comboMultBase + state.combo * CONFIG.comboMultStep) * state.skillMods.scoreMult);
+    // Critical check
+    if (state.skillMods.critChance > 0 && Math.random() < state.skillMods.critChance) {
+        scoreGain *= 3;
+        showJudgment('CRITICAL!', '#FF00FF');
+    } else {
+        showJudgment('PERFECT!', '#F4C430');
+    }
+    state.score += scoreGain;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    showSlashEffect(lastSwipeDir, true);
+    spawnParticles(enemy.model.position, 0xF4C430, 12);
+    knockbackEnemy(enemy, lastSwipeDir);
+    killEnemy(enemy);
+    gainXP(CONFIG.xpPerfect);
+    SFX.perfect();
+    if (navigator.vibrate) navigator.vibrate(30);
+    if (state.combo > 0 && state.combo % 5 === 0) SFX.combo5();
+    hitStop(80); screenShake(0.15, 0.2);
+
+    // Life steal
+    if (state.skillMods.lifeStealChance > 0 && Math.random() < state.skillMods.lifeStealChance && state.hp < CONFIG.startHP) {
+        state.hp++; showJudgment('+1 HP', '#00FF88');
+    }
+    // Blast wave
+    if (state.skillMods.blastRadius > 0) blastWave(enemy.model.position);
+    updateHUD();
+}
+
+function onGood(enemy) {
+    let scoreGain = Math.floor(CONFIG.goodScore * (CONFIG.comboMultBase + state.combo * CONFIG.comboMultStep) * state.skillMods.scoreMult);
+    if (state.skillMods.critChance > 0 && Math.random() < state.skillMods.critChance) {
+        scoreGain *= 3; showJudgment('CRITICAL!', '#FF00FF');
+    } else {
+        showJudgment('GOOD', '#FFFFFF');
+    }
+    state.score += scoreGain;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    showSlashEffect(lastSwipeDir, false);
+    spawnParticles(enemy.model.position, 0xFFFFFF, 6);
+    knockbackEnemy(enemy, lastSwipeDir);
+    killEnemy(enemy);
+    gainXP(CONFIG.xpGood);
+    SFX.good();
+    if (navigator.vibrate) navigator.vibrate(20);
+    hitStop(40);
+
+    if (state.skillMods.lifeStealChance > 0 && Math.random() < state.skillMods.lifeStealChance && state.hp < CONFIG.startHP) state.hp++;
+    if (state.skillMods.blastRadius > 0) blastWave(enemy.model.position);
+    updateHUD();
+}
+
+function onMiss() {
+    if (!state.skillMods.comboGuard) state.combo = 0;
+    showJudgment('MISS', '#666666');
+    SFX.miss();
+    updateHUD();
+}
+
+function onDamage(enemy) {
+    // Shield check
+    if (state.skillMods.shield > 0) {
+        state.skillMods.shield--;
+        showJudgment('BLOCKED!', '#0F9FFF');
+        spawnParticles(player.model.position, 0x0F9FFF, 8);
+        deactivateEnemy(enemy);
+        SFX.good();
+        updateHUD();
+        return;
+    }
+    state.hp--; state.combo = 0;
+    spawnParticles(player.model.position, 0xE94560, 10);
+    deactivateEnemy(enemy);
+    showJudgment('DAMAGE!', '#E94560');
+    SFX.damage();
+    if (navigator.vibrate) navigator.vibrate([50, 30, 80]);
+    if (player) player.play('HitReact', 0.1, false);
+    setTimeout(() => { if (player && state.current === GameState.PLAYING) player.play('Run', 0.2); }, 500);
+    screenShake(0.35, 0.5); hitStop(100);
+    flashScreen('#E94560');
+    updateHUD();
+    if (state.hp <= 0) onPlayerDeath();
+}
+
+function killEnemy(enemy) {
+    enemy.hit = true;
+    enemy.play('Death', 0.1, false);
+    setTimeout(() => deactivateEnemy(enemy), 800);
+}
+
+function blastWave(pos) {
+    for (const enemy of [...state.activeEnemies]) {
+        if (enemy.hit) continue;
+        const dist = enemy.model.position.distanceTo(pos);
+        if (dist < state.skillMods.blastRadius && dist > 0.5) {
+            spawnParticles(enemy.model.position, 0xFFAA44, 4);
+            killEnemy(enemy);
+            state.score += 30;
+            gainXP(1);
+        }
+    }
+}
+
+function onPlayerDeath() {
+    SFX.death();
+    if (player) player.play('Death', 0.1, false);
+    screenShake(0.5, 0.8);
+    state.timeScale = 0.3;
+    setTimeout(() => { state.timeScale = 1.0; setState(GameState.GAME_OVER); }, 800);
+}
+
+// ============================================================
+// XP / UPGRADE SYSTEM
+// ============================================================
+function gainXP(amount) {
+    state.xp += amount;
+    const nextThresh = CONFIG.xpLevels[state.level];
+    if (nextThresh && state.xp >= nextThresh) {
+        state.level++;
+        state.pendingUpgrade = true;
+        SFX.levelUp();
+    }
+    updateXPBar();
+}
+
+function updateXPBar() {
+    const currThresh = state.level > 0 ? CONFIG.xpLevels[state.level - 1] : 0;
+    const nextThresh = CONFIG.xpLevels[state.level] || (currThresh + 50);
+    const pct = Math.min((state.xp - currThresh) / (nextThresh - currThresh) * 100, 100);
+    dom.hudXpFill.style.width = `${pct}%`;
+    dom.hudLevel.textContent = `LV.${state.level + 1}`;
+}
+
+function showUpgradeSelection() {
+    state.current = GameState.UPGRADING;
+    dom.upgradeScreen.style.display = 'flex';
+    dom.upgradeLevelText.textContent = `Level ${state.level + 1}`;
+
+    // Pick 2 random skills not yet acquired (allow repeats if all acquired)
+    const available = SKILL_DEFS.filter(s => !state.acquiredSkills.includes(s.id));
+    const pool = available.length >= 2 ? available : SKILL_DEFS;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const picks = [shuffled[0], shuffled[1] || shuffled[0]];
+
+    for (let i = 0; i < 2; i++) {
+        document.getElementById(`skill-icon-${i}`).textContent = picks[i].icon;
+        document.getElementById(`skill-name-${i}`).textContent = picks[i].name;
+        document.getElementById(`skill-desc-${i}`).textContent = picks[i].desc;
+
+        const btn = document.getElementById(`upgrade-opt-${i}`);
+        // Remove old listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        const selectSkill = (ev) => {
+            if (ev) ev.stopPropagation();
+            if (state.current !== GameState.UPGRADING) return; // prevent double-fire
+            picks[i].apply();
+            state.acquiredSkills.push(picks[i].id);
+            state.pendingUpgrade = false;
+            dom.upgradeScreen.style.display = 'none';
+            state.current = GameState.PLAYING;
+            showJudgment(picks[i].name + '!', '#F4C430');
+            SFX.menuTap();
+        };
+        newBtn.addEventListener('click', selectSkill);
+        newBtn.addEventListener('touchend', (ev) => { ev.preventDefault(); selectSkill(ev); });
+    }
+}
+
+// ============================================================
+// SCREEN EFFECTS
+// ============================================================
+let shakeTime = 0, shakeIntensity = 0;
+const cameraBasePos = new THREE.Vector3(CONFIG.cameraPos.x, CONFIG.cameraPos.y, CONFIG.cameraPos.z);
+function screenShake(duration, intensity) { shakeTime = duration; shakeIntensity = intensity; }
+
+let hitStopRemaining = 0;
+function hitStop(ms) { hitStopRemaining = ms; }
+
+function flashScreen(color) {
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:${color};opacity:0.3;z-index:15;pointer-events:none;transition:opacity 0.2s;`;
+    gc.appendChild(flash);
+    requestAnimationFrame(() => { flash.style.opacity = '0'; });
+    setTimeout(() => flash.remove(), 300);
+}
+
+function showSlashEffect(direction, isPerfect) {
+    const slash = document.createElement('div');
+    slash.className = 'slash-effect' + (isPerfect ? '' : ' good');
+    const w = gc.clientWidth, h = gc.clientHeight;
+    let x, animName;
+    if (direction === 'LEFT') { x = w * 0.2; animName = 'slashLeft'; }
+    else if (direction === 'RIGHT') { x = w * 0.8; animName = 'slashRight'; }
+    else { x = w * 0.5; animName = 'slashCenter'; }
+    slash.style.left = `${x-4}px`; slash.style.top = `${h*0.35}px`;
+    slash.style.animation = `${animName} 0.35s ease-out forwards`;
+    gc.appendChild(slash);
+    setTimeout(() => slash.remove(), 400);
+    const glow = document.createElement('div');
+    glow.style.cssText = `position:absolute;top:20%;width:${w*0.3}px;height:60%;left:${x-w*0.15}px;background:radial-gradient(ellipse at center, ${isPerfect ? 'rgba(244,196,48,0.15)' : 'rgba(255,255,255,0.08)'} 0%, transparent 70%);pointer-events:none;z-index:11;opacity:1;transition:opacity 0.25s;`;
+    gc.appendChild(glow);
+    requestAnimationFrame(() => { glow.style.opacity = '0'; });
+    setTimeout(() => glow.remove(), 300);
+}
+
+// ============================================================
+// KILL PARTICLES (3D)
+// ============================================================
+const particlePool = [];
+const PARTICLE_COUNT = 50;
+const particleGeo = new THREE.SphereGeometry(0.08, 4, 4);
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 1 });
+    const mesh = new THREE.Mesh(particleGeo, mat);
+    mesh.visible = false;
+    mesh.userData = { vel: new THREE.Vector3(), life: 0, maxLife: 0 };
+    scene.add(mesh); particlePool.push(mesh);
+}
+
+function spawnParticles(position, color, count = 8) {
+    let spawned = 0;
+    for (const p of particlePool) {
+        if (p.visible || spawned >= count) continue;
+        p.visible = true; p.position.copy(position); p.position.y += 0.5;
+        p.material.color.setHex(color); p.material.opacity = 1;
+        p.scale.setScalar(0.5 + Math.random() * 1.0);
+        const angle = Math.random() * Math.PI * 2;
+        p.userData.vel.set(Math.cos(angle)*(2+Math.random()*3), 2+Math.random()*4, Math.sin(angle)*(2+Math.random()*3));
+        p.userData.life = 0; p.userData.maxLife = 0.4 + Math.random() * 0.3;
+        spawned++;
+    }
+}
+
+function updateParticles(dt) {
+    for (const p of particlePool) {
+        if (!p.visible) continue;
+        p.userData.life += dt;
+        if (p.userData.life >= p.userData.maxLife) { p.visible = false; continue; }
+        const t = p.userData.life / p.userData.maxLife;
+        p.position.addScaledVector(p.userData.vel, dt);
+        p.userData.vel.y -= 12 * dt;
+        p.material.opacity = 1 - t;
+        p.scale.setScalar((1 - t) * 0.8);
+    }
+}
+
+// ============================================================
+// ENEMY KNOCKBACK
+// ============================================================
+function knockbackEnemy(enemy, direction) {
+    const knockDir = new THREE.Vector3();
+    if (direction === 'LEFT') knockDir.set(-1, 0.5, -1).normalize();
+    else if (direction === 'RIGHT') knockDir.set(1, 0.5, -1).normalize();
+    else knockDir.set(0, 0.5, -1.5).normalize();
+    const startPos = enemy.model.position.clone();
+    const knockDist = 2.5, knockTime = 0.3, startTime = performance.now();
+    function anim() {
+        const t = Math.min((performance.now() - startTime) / 1000 / knockTime, 1);
+        enemy.model.position.copy(startPos).addScaledVector(knockDir, knockDist * (1 - Math.pow(1-t,3)));
+        if (t < 1) requestAnimationFrame(anim);
+    }
+    anim();
+}
+
+// ============================================================
+// KILL ZONE DANGER
+// ============================================================
+let killZoneDanger = false;
+const killZoneBaseColor = new THREE.Color(CONFIG.killZoneColor);
+const killZoneDangerColor = new THREE.Color(CONFIG.killZoneDangerColor);
+
+function updateKillZoneDanger() {
+    const hasEnemy = state.activeEnemies.some(e => !e.hit && e.model.position.distanceTo(player.model.position) <= CONFIG.goodZone.max);
+    if (hasEnemy !== killZoneDanger) {
+        killZoneDanger = hasEnemy;
+        const c = killZoneDanger ? killZoneDangerColor : killZoneBaseColor;
+        killZoneMat.color.copy(c); killZoneMat.opacity = killZoneDanger ? 0.15 : 0.08;
+        killZoneRingMat.color.copy(c); killZoneRingMat.opacity = killZoneDanger ? 0.4 : 0.25;
+    }
+}
+
+// ============================================================
+// PROGRESS BAR
+// ============================================================
+function updateProgressBar() {
+    const progress = Math.min(state.gameTime / CONFIG.totalDuration, 1.0);
+    dom.progressFill.style.height = `${progress * 100}%`;
+    dom.progressIcon.style.bottom = `${progress * 100}%`;
+    const secs = Math.floor(state.gameTime);
+    dom.progressTime.textContent = `${Math.floor(secs/60)}:${(secs%60).toString().padStart(2,'0')}`;
+}
+
+// ============================================================
+// WAVE ANNOUNCEMENT
+// ============================================================
+function announceWave(text) {
+    dom.waveText.textContent = text;
+    dom.waveAnnounce.style.display = 'flex';
+    dom.waveText.style.animation = 'none';
+    void dom.waveText.offsetWidth;
+    dom.waveText.style.animation = 'waveAnnounce 1.5s ease-out forwards';
+    setTimeout(() => { dom.waveAnnounce.style.display = 'none'; }, 1600);
+}
+
+// ============================================================
+// HUD
+// ============================================================
+function updateHUD() {
+    dom.hudScore.textContent = state.score.toLocaleString();
+    dom.hudHP.textContent = '♥'.repeat(Math.max(0, state.hp)) + '♡'.repeat(Math.max(0, CONFIG.startHP - state.hp));
+    dom.hudWave.textContent = `WAVE ${state.wave}`;
+    if (state.combo >= 2) {
+        dom.hudCombo.textContent = `×${state.combo} COMBO`;
+        dom.hudCombo.style.opacity = '1';
+        dom.hudCombo.style.animation = 'none';
+        void dom.hudCombo.offsetWidth;
+        dom.hudCombo.style.animation = 'comboPulse 0.3s ease-out forwards';
+    } else {
+        dom.hudCombo.style.opacity = '0';
+    }
+    // Shield indicator
+    if (state.skillMods.shield > 0) {
+        dom.hudHP.textContent += ` 🛡️×${state.skillMods.shield}`;
+    }
+}
+
+function showJudgment(text, color) {
+    dom.hudJudge.textContent = text;
+    dom.hudJudge.style.color = color;
+    dom.hudJudge.style.animation = 'none';
+    void dom.hudJudge.offsetWidth;
+    dom.hudJudge.style.animation = 'judgmentFlash 0.6s ease-out forwards';
+}
+
+// ============================================================
+// GAME STATE MANAGEMENT
+// ============================================================
+function setState(newState) {
+    state.current = newState;
+    dom.loading.style.display = 'none';
+    dom.menu.style.display = 'none';
+    dom.gameover.style.display = 'none';
+    dom.hud.style.display = 'none';
+    dom.upgradeScreen.style.display = 'none';
+
+    switch (newState) {
+        case GameState.MENU:
+            dom.menu.style.display = 'flex';
+            dom.menuHigh.textContent = `BEST: ${state.highScore.toLocaleString()}`;
+            break;
+        case GameState.PLAYING:
+            dom.hud.style.display = 'block';
+            resetGame();
+            break;
+        case GameState.GAME_OVER:
+            dom.gameover.style.display = 'flex';
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+                try { localStorage.setItem('monsterslash_highScore', state.highScore.toString()); } catch(e) {}
+            }
+            dom.goScore.textContent = state.score.toLocaleString();
+            dom.goGrade.textContent = getGrade(state.score);
+            dom.goGrade.style.color = getGradeColor(state.score);
+            dom.goHigh.textContent = `BEST: ${state.highScore.toLocaleString()}`;
+            state.gameOverCooldown = 500;
+            break;
+    }
+}
+
+function resetGame() {
+    state.score = 0; state.hp = CONFIG.startHP;
+    state.combo = 0; state.maxCombo = 0;
+    state.gameTime = 0; state.spawnTimer = 1.5;
+    state.difficultyIndex = 0; state.timeScale = 1.0;
+    state.wave = 1; state.waveAnnounced = false;
+    state.xp = 0; state.level = 0;
+    state.pendingUpgrade = false;
+    state.acquiredSkills = [];
+    resetSkillMods();
+
+    // Reset zone sizes (in case Wider Slash was applied)
+    CONFIG.perfectZone.min = 1.5; CONFIG.perfectZone.max = 4.0;
+    CONFIG.goodZone.min = 4.0; CONFIG.goodZone.max = 6.5;
+
+    for (const enemy of [...state.activeEnemies]) deactivateEnemy(enemy);
+    if (player) { player.model.position.set(CONFIG.playerPos.x, CONFIG.playerPos.y, CONFIG.playerPos.z); player.play('Run'); }
+    updateHUD(); updateXPBar();
+}
+
+function getGrade(score) { if (score>=5000) return 'S'; if (score>=3000) return 'A'; if (score>=1500) return 'B'; if (score>=500) return 'C'; return 'D'; }
+function getGradeColor(score) { if (score>=5000) return '#F4C430'; if (score>=3000) return '#FF6B6B'; if (score>=1500) return '#4DEEEA'; if (score>=500) return '#00FF88'; return '#999999'; }
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+function animate() {
+    requestAnimationFrame(animate);
+    let dt = Math.min(clock.getDelta(), 0.1);
+    if (hitStopRemaining > 0) { hitStopRemaining -= dt * 1000; dt = 0; }
+    dt *= (state.timeScale || 1.0);
+
+    if (state.gameOverCooldown > 0) state.gameOverCooldown -= dt * 1000;
+
+    if (state.current === GameState.PLAYING) {
+        updatePlaying(dt);
+        if (player) updateKillZoneDanger();
+        updateProgressBar();
+    }
+
+    updateParticles(dt);
+    updateTrail();
+    if (player) player.update(dt);
+    for (const enemy of state.activeEnemies) enemy.update(dt);
+
+    if (shakeTime > 0) {
+        shakeTime -= dt;
+        camera.position.set(cameraBasePos.x + (Math.random()-0.5)*shakeIntensity, cameraBasePos.y + (Math.random()-0.5)*shakeIntensity*0.5, cameraBasePos.z);
+    } else {
+        camera.position.copy(cameraBasePos);
+    }
+    camera.lookAt(CONFIG.cameraLookAt.x, CONFIG.cameraLookAt.y, CONFIG.cameraLookAt.z);
+    renderer.render(scene, camera);
+}
+
+function updatePlaying(dt) {
+    state.gameTime += dt;
+
+    // Wave transition
+    if (state.gameTime >= CONFIG.wave2Start && state.wave === 1) {
+        state.wave = 2;
+        announceWave('⚠️ WAVE 2! ⚠️');
+        SFX.wave();
+        flashScreen('#E94560');
+        screenShake(0.4, 0.3);
+        dom.hudWave.style.color = '#E94560';
+    }
+
+    // Check pending upgrade (pause game to show selection)
+    if (state.pendingUpgrade) {
+        showUpgradeSelection();
+        return;
+    }
+
+    scrollEnvironment(dt);
+
+    // Spawn enemies
+    const diff = getCurrentDifficulty();
+    state.spawnTimer -= dt;
+    if (state.spawnTimer <= 0) {
+        spawnEnemy();
+        state.spawnTimer = diff.spawnInterval * (0.8 + Math.random() * 0.4);
+    }
+
+    // Move enemies
+    for (const enemy of [...state.activeEnemies]) {
+        if (enemy.hit) continue;
+        enemy.model.position.z += enemy.speed * dt;
+        if (enemy.model.position.distanceTo(player.model.position) < CONFIG.damageDist) onDamage(enemy);
+        if (enemy.model.position.z > CONFIG.envRecycleZ) deactivateEnemy(enemy);
+    }
+
+    // Auto game over at time limit
+    if (state.gameTime >= CONFIG.totalDuration) {
+        setState(GameState.GAME_OVER);
+    }
+}
+
+function scrollEnvironment(dt) {
+    const scrollSpeed = CONFIG.groundSpeed * (getCurrentDifficulty().speedMult || 1.0);
+    for (const line of gridGroup.children) { line.position.z += scrollSpeed * dt; if (line.position.z > 10) line.position.z -= 80; }
+    for (const obj of envPool) { obj.position.z += scrollSpeed * dt; if (obj.position.z > CONFIG.envRecycleZ) resetEnvObject(obj); }
+}
+
+// ============================================================
+// RESIZE
+// ============================================================
+function onResize() {
+    const container = document.getElementById('game-container');
+    const w = container ? container.clientWidth : window.innerWidth;
+    const h = container ? container.clientHeight : window.innerHeight;
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h); resizeTrailCanvas();
+}
+window.addEventListener('resize', onResize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
+
+document.addEventListener('visibilitychange', () => { if (document.hidden) clock.stop(); else { clock.start(); clock.getDelta(); } });
+renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); });
+renderer.domElement.addEventListener('webglcontextrestored', () => {});
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+    try {
+        await loadAllModels();
+        setupPlayer();
+        setupEnemyPools();
+        setState(GameState.MENU);
+    } catch (err) {
+        console.error('Init failed:', err);
+        dom.loading.querySelector('.load-text').textContent = 'Load failed. Refresh to retry.';
+    }
+    animate();
+}
+
+window._game = { state, CONFIG, handleSwipe, GameState, setState, GestureSystem };
+init().then(() => { window._game.player = player; window._game.enemyPools = enemyPools; });
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Log — #001 Monster Slash | Prototype Lab</title>
+    <meta property="og:title" content="Monster Slash — Swipe to Slash!">
+    <meta property="og:description" content="3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.">
+    <meta property="og:image" content="/games/prototype001-monsterslash/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a; color: #e0e0e0; line-height: 1.8;
+        }
+        .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { color: #3b82f6; }
+        nav { margin-bottom: 2rem; font-size: 0.85rem; }
+        nav a { color: #888; }
+        .hero-cover {
+            width: 100%; aspect-ratio: 1200/630; object-fit: cover;
+            border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #222;
+        }
+        .hero { margin-bottom: 2.5rem; }
+        .hero h1 { font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem; }
+        .hero .tagline { color: #aaa; font-size: 1rem; margin-bottom: 0.8rem; }
+        .hero ul { color: #999; font-size: 0.88rem; list-style: none; padding: 0; margin-bottom: 1.2rem; }
+        .hero ul li::before { content: "· "; color: #555; }
+        .hero ul li { margin-bottom: 0.15rem; }
+        .play-btn {
+            display: inline-block; padding: 0.7rem 2rem; background: #2563eb; color: #fff;
+            border-radius: 8px; font-weight: 600; font-size: 1rem;
+            transition: transform 0.15s;
+        }
+        .play-btn:hover { background: #3b82f6; color: #fff; }
+        .play-btn:active { transform: scale(0.96); }
+        .game-embed {
+            margin: 2rem auto; border-radius: 12px; overflow: hidden;
+            border: 1px solid #222; background: #000;
+            max-width: 390px;
+        }
+        .game-embed iframe {
+            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        }
+        .game-embed-note {
+            text-align: center; padding: 0.6rem; background: #111;
+            font-size: 0.75rem; color: #555;
+        }
+        article { margin-top: 2rem; }
+        article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
+        article h3 { font-size: 1.05rem; color: #ddd; margin: 1.5rem 0 0.5rem; }
+        article p { color: #bbb; margin-bottom: 1rem; }
+        article strong { color: #fff; }
+        article ul { color: #bbb; padding-left: 1.5rem; margin-bottom: 1rem; }
+        article li { margin-bottom: 0.3rem; }
+        article hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
+        footer { border-top: 1px solid #222; padding-top: 2rem; margin-top: 3rem; color: #555; font-size: 0.8rem; text-align: center; }
+        @media (max-width: 480px) {
+            .container { padding: 1.2rem 1rem; }
+            .hero h1 { font-size: 1.3rem; }
+            .game-embed { max-width: none; }
+            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav><a href="/">← Prototype Lab</a></nav>
+
+        <img class="hero-cover" src="/games/prototype001-monsterslash/og-image.png" alt="Monster Slash gameplay">
+
+        <div class="hero">
+            <h1>Dev Log — #001 Monster Slash</h1>
+            <p class="tagline">3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.</p>
+            <ul>
+                <li>A mix of Fruit Ninja and music game concepts</li>
+                <li>Swipe across monsters to slash them</li>
+                <li>Built with Three.js, runs in mobile browser</li>
+                <li>No download, click and play</li>
+            </ul>
+        </div>
+
+        <!-- Game embed -->
+        <div class="game-embed">
+            <iframe src="/games/prototype001-monsterslash/" loading="lazy" allow="autoplay"></iframe>
+            <div class="game-embed-note">Best on mobile — <a href="/games/prototype001-monsterslash/">Open fullscreen</a></div>
+        </div>
+
+        <article>
+            <h2>Design Notes</h2>
+            <p>The development goal is to create lightweight games that can be played immediately after being forwarded on a mobile phone.</p>
+            <p>Prototype #001 — First in a series of 3D mobile browser games.</p>
+            <p>The idea started from a simple question: what if Fruit Ninja was 3D and the fruits fought back?</p>
+            <p>Built the slash mechanic first — felt flat. Added screen shake, and it immediately felt better. Then added combo timing where the window gets tighter the higher your streak. It started to feel like a rhythm game. That wasn't planned, but it works.</p>
+
+            <hr>
+
+            <h2>Dev Log</h2>
+            
+            <h3>Screen shake</h3>
+            <p>A small camera offset on hit — just enough for the body to feel it before the eyes notice. Too much and it's nauseating, too little and it's invisible.</p>
+
+            <h3>Combo timing</h3>
+            <p>Perfect, Good, and Miss tiers. Faster slashes get stricter windows but higher scores. It gives players a goal beyond just killing — slash with precision.</p>
+
+            <h3>What's next</h3>
+            <p>There are a few directions being considered for future iterations. Procedural audio is one — having different pitch per combo tier so that chaining Perfects could form a rising scale, letting players &quot;play&quot; their own melody through combat. Another idea is rhythm variety through monster types: mixing fast one-hit enemies with precision-based and timing-critical ones to force constant rhythm switching.</p>
+
+            <hr>
+
+            <h2>Credits</h2>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
+            <p style="margin-top: 0.5rem;">Prototype Lab series #001 by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+
+            <p style="margin-top: 1.5rem;">
+                <a href="/games/prototype001-monsterslash/" class="play-btn">▶ Play Monster Slash</a>
+            </p>
+        </article>
+
+        <footer>
+            <p><a href="/">← Back to Prototype Lab</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+        </footer>
+    </div>
+</body>
+</html>
