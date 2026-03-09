@@ -9,20 +9,10 @@ echo.
 echo === Prototype Lab Blog Deploy ===
 echo.
 
-REM --- Step 1: Sync game files ---
+REM --- Step 1: Sync game files (uses games.json repo names) ---
 echo [1/4] Syncing game files...
-
-for /d %%S in ("%PROTOTYPE_ROOT%\Game\slot*") do (
-    for /d %%G in ("%%S\game-*") do (
-        if exist "%%G\deploy\index.html" (
-            for %%F in ("%%G") do set GAME_FOLDER=%%~nxF
-            set GAME_NAME=!GAME_FOLDER:game-=prototype!
-            echo   Copying !GAME_NAME!...
-            if not exist "%GAMES_DIR%\!GAME_NAME!" mkdir "%GAMES_DIR%\!GAME_NAME!"
-            xcopy /s /y /q "%%G\deploy\*" "%GAMES_DIR%\!GAME_NAME!\" >nul 2>&1
-        )
-    )
-)
+cd /d "%BLOG_DIR%"
+node sync-games.mjs
 
 REM --- Step 2: Build blog HTML ---
 echo [2/4] Building blog HTML...

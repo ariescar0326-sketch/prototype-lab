@@ -4,6 +4,7 @@
         "name": "Monster Slash",
         "slug": "monsterslash",
         "repo": "prototype001-monsterslash",
+        "sourceFolder": "slot002/game-001-monsterslash",
         "tagline": "Swipe to slash · chain combos · survive waves",
         "ogTagline": "Swipe to Slash!",
         "description": "3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.",
@@ -41,6 +42,7 @@
         "name": "Sky Roller",
         "slug": "skyroller",
         "repo": "prototype002-skyroller",
+        "sourceFolder": "slot002/game-002-skyroller",
         "tagline": "Ball race · dodge crates · ragdoll physics",
         "ogTagline": "Roll to Survive!",
         "description": "7-player ball race on a sky track. Dodge crates, collect buffs, ragdoll physics. Play instantly in your browser.",
@@ -69,6 +71,44 @@
             {
                 "title": "What makes it feel right",
                 "body": "The game over cooldown — 3 seconds before you can restart. Forces a breath, makes each crash register. And the dust particles behind rolling balls scale with speed, so fast feels fast even before looking at the speedometer."
+            }
+        ],
+        "date": "2026-03"
+    },
+    {
+        "number": 3,
+        "name": "Territory Conquest",
+        "slug": "territory",
+        "repo": "prototype006-territory",
+        "sourceFolder": "slot002/game-006-territory-simplify",
+        "tagline": "Claim land · close loops · conquer the grid",
+        "ogTagline": "Conquer the Grid!",
+        "description": "4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.",
+        "tags": ["4 players", "Three.js", "GLTF"],
+        "features": [
+            "Drag to move, close loops to claim territory",
+            "Roguelike Attack-path upgrades (Blade Rush, Shotgun, Bomber)",
+            "Procedural audio — 23 sounds, zero external files",
+            "No download, click and play"
+        ],
+        "designNotes": [
+            "Prototype #006 — A paper.io-style territory conquest game.",
+            "The core loop is simple: drag your hero to paint tiles, return home to claim enclosed land. But with 4 factions fighting over a 200x200 grid, simple becomes chaotic fast.",
+            "The roguelike skill system was originally 3 paths (Attack, Commander, Speed) with 3 tiers each. Simplified to Attack-only for a tighter experience — Blade Rush for melee cleave, Shotgun for ranged spread, Bomber for area denial with fire trails.",
+            "All 23 sound effects are procedurally generated via Web Audio API oscillators and noise. No audio files loaded at all — the entire game is a single HTML file with GLTF models."
+        ],
+        "devLog": [
+            {
+                "title": "Flood fill at scale",
+                "body": "200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps."
+            },
+            {
+                "title": "Influence map AI",
+                "body": "Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner."
+            },
+            {
+                "title": "Procedural audio",
+                "body": "23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies."
             }
         ],
         "date": "2026-03"

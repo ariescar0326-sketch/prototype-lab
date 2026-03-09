@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Log — #003 Territory Conquest | Prototype Lab</title>
+    <meta property="og:title" content="Territory Conquest — Conquer the Grid!">
+    <meta property="og:description" content="4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.">
+    <meta property="og:image" content="/games/prototype006-territory/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a; color: #e0e0e0; line-height: 1.8;
+        }
+        .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { color: #3b82f6; }
+        nav { margin-bottom: 2rem; font-size: 0.85rem; }
+        nav a { color: #888; }
+        .hero-cover {
+            width: 100%; aspect-ratio: 1200/630; object-fit: cover;
+            border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #222;
+        }
+        .hero { margin-bottom: 2.5rem; }
+        .hero h1 { font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem; }
+        .hero .tagline { color: #aaa; font-size: 1rem; margin-bottom: 0.8rem; }
+        .hero ul { color: #999; font-size: 0.88rem; list-style: none; padding: 0; margin-bottom: 1.2rem; }
+        .hero ul li::before { content: "· "; color: #555; }
+        .hero ul li { margin-bottom: 0.15rem; }
+        .play-btn {
+            display: inline-block; padding: 0.7rem 2rem; background: #2563eb; color: #fff;
+            border-radius: 8px; font-weight: 600; font-size: 1rem;
+            transition: transform 0.15s;
+        }
+        .play-btn:hover { background: #3b82f6; color: #fff; }
+        .play-btn:active { transform: scale(0.96); }
+        .game-embed {
+            margin: 2rem auto; border-radius: 12px; overflow: hidden;
+            border: 1px solid #222; background: #000;
+            max-width: 390px;
+        }
+        .game-embed iframe {
+            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        }
+        .game-embed-note {
+            text-align: center; padding: 0.6rem; background: #111;
+            font-size: 0.75rem; color: #555;
+        }
+        article { margin-top: 2rem; }
+        article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
+        article h3 { font-size: 1.05rem; color: #ddd; margin: 1.5rem 0 0.5rem; }
+        article p { color: #bbb; margin-bottom: 1rem; }
+        article strong { color: #fff; }
+        article ul { color: #bbb; padding-left: 1.5rem; margin-bottom: 1rem; }
+        article li { margin-bottom: 0.3rem; }
+        article hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
+        footer { border-top: 1px solid #222; padding-top: 2rem; margin-top: 3rem; color: #555; font-size: 0.8rem; text-align: center; }
+        @media (max-width: 480px) {
+            .container { padding: 1.2rem 1rem; }
+            .hero h1 { font-size: 1.3rem; }
+            .game-embed { max-width: none; }
+            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav><a href="/">← Prototype Lab</a></nav>
+
+        <img class="hero-cover" src="/games/prototype006-territory/og-image.png" alt="Territory Conquest gameplay">
+
+        <div class="hero">
+            <h1>Dev Log — #003 Territory Conquest</h1>
+            <p class="tagline">4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.</p>
+            <ul>
+                <li>Drag to move, close loops to claim territory</li>
+                <li>Roguelike Attack-path upgrades (Blade Rush, Shotgun, Bomber)</li>
+                <li>Procedural audio — 23 sounds, zero external files</li>
+                <li>No download, click and play</li>
+            </ul>
+        </div>
+
+        <!-- Game embed -->
+        <div class="game-embed">
+            <iframe src="/games/prototype006-territory/" loading="lazy" allow="autoplay"></iframe>
+            <div class="game-embed-note">Best on mobile — <a href="/games/prototype006-territory/">Open fullscreen</a></div>
+        </div>
+
+        <article>
+            <h2>Design Notes</h2>
+            <p>Prototype #006 — A paper.io-style territory conquest game.</p>
+            <p>The core loop is simple: drag your hero to paint tiles, return home to claim enclosed land. But with 4 factions fighting over a 200x200 grid, simple becomes chaotic fast.</p>
+            <p>The roguelike skill system was originally 3 paths (Attack, Commander, Speed) with 3 tiers each. Simplified to Attack-only for a tighter experience — Blade Rush for melee cleave, Shotgun for ranged spread, Bomber for area denial with fire trails.</p>
+            <p>All 23 sound effects are procedurally generated via Web Audio API oscillators and noise. No audio files loaded at all — the entire game is a single HTML file with GLTF models.</p>
+
+            <hr>
+
+            <h2>Dev Log</h2>
+            
+            <h3>Flood fill at scale</h3>
+            <p>200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps.</p>
+
+            <h3>Influence map AI</h3>
+            <p>Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner.</p>
+
+            <h3>Procedural audio</h3>
+            <p>23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies.</p>
+
+            <hr>
+
+            <h2>Credits</h2>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
+            <p style="margin-top: 0.5rem;">Prototype Lab series #003 by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+
+            <p style="margin-top: 1.5rem;">
+                <a href="/games/prototype006-territory/" class="play-btn">▶ Play Territory Conquest</a>
+            </p>
+        </article>
+
+        <footer>
+            <p><a href="/">← Back to Prototype Lab</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+        </footer>
+    </div>
+</body>
+</html>
