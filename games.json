@@ -112,5 +112,44 @@
             }
         ],
         "date": "2026-03"
+    },
+    {
+        "number": 8,
+        "name": "Wall Wars",
+        "slug": "wallwars",
+        "repo": "prototype008-wallwars",
+        "sourceFolder": "slot003/game-008-wallwars",
+        "tagline": "Draw walls · claim territory · real-time multiplayer",
+        "ogTagline": "Build Walls, Claim Land!",
+        "description": "Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.",
+        "tags": ["Multiplayer", "Three.js", "Cloudflare Workers"],
+        "features": [
+            "Real-time multiplayer via WebSocket (2-4 players)",
+            "Create rooms with 4-letter codes, share with friends",
+            "AI fills empty slots automatically",
+            "Solo mode with AI opponent",
+            "No download, click and play"
+        ],
+        "designNotes": [
+            "Prototype #008 — First real-time multiplayer game in the series.",
+            "The server runs on Cloudflare Workers with Durable Objects. Each room is a single DO instance that manages game state, tick loop, and WebSocket connections. Room codes use idFromName() so any Worker edge can resolve the same room.",
+            "The flood-fill BFS runs server-side every tick to determine territory ownership. When walls fully enclose an area, it flips to the wall owner. Simple mechanic, emergent strategy.",
+            "Ink system adds resource management — you can't wall spam. Regen is constant, so knowing when to save ink vs when to rush-build matters."
+        ],
+        "devLog": [
+            {
+                "title": "Durable Object gotcha",
+                "body": "Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug."
+            },
+            {
+                "title": "WebSocket non-Hibernation",
+                "body": "Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game."
+            },
+            {
+                "title": "Client-side prediction",
+                "body": "Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks."
+            }
+        ],
+        "date": "2026-03"
     }
 ]

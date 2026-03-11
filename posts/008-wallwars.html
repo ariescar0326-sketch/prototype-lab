@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Log — #008 Wall Wars | Prototype Lab</title>
+    <meta property="og:title" content="Wall Wars — Build Walls, Claim Land!">
+    <meta property="og:description" content="Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.">
+    <meta property="og:image" content="/games/prototype008-wallwars/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a; color: #e0e0e0; line-height: 1.8;
+        }
+        .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+        a { color: #2563eb; text-decoration: none; }
+        a:hover { color: #3b82f6; }
+        nav { margin-bottom: 2rem; font-size: 0.85rem; }
+        nav a { color: #888; }
+        .hero-cover {
+            width: 100%; aspect-ratio: 1200/630; object-fit: cover;
+            border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #222;
+        }
+        .hero { margin-bottom: 2.5rem; }
+        .hero h1 { font-size: 1.6rem; color: #fff; margin-bottom: 0.5rem; }
+        .hero .tagline { color: #aaa; font-size: 1rem; margin-bottom: 0.8rem; }
+        .hero ul { color: #999; font-size: 0.88rem; list-style: none; padding: 0; margin-bottom: 1.2rem; }
+        .hero ul li::before { content: "· "; color: #555; }
+        .hero ul li { margin-bottom: 0.15rem; }
+        .play-btn {
+            display: inline-block; padding: 0.7rem 2rem; background: #2563eb; color: #fff;
+            border-radius: 8px; font-weight: 600; font-size: 1rem;
+            transition: transform 0.15s;
+        }
+        .play-btn:hover { background: #3b82f6; color: #fff; }
+        .play-btn:active { transform: scale(0.96); }
+        .game-embed {
+            margin: 2rem auto; border-radius: 12px; overflow: hidden;
+            border: 1px solid #222; background: #000;
+            max-width: 390px;
+        }
+        .game-embed iframe {
+            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        }
+        .game-embed-note {
+            text-align: center; padding: 0.6rem; background: #111;
+            font-size: 0.75rem; color: #555;
+        }
+        article { margin-top: 2rem; }
+        article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
+        article h3 { font-size: 1.05rem; color: #ddd; margin: 1.5rem 0 0.5rem; }
+        article p { color: #bbb; margin-bottom: 1rem; }
+        article strong { color: #fff; }
+        article ul { color: #bbb; padding-left: 1.5rem; margin-bottom: 1rem; }
+        article li { margin-bottom: 0.3rem; }
+        article hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
+        footer { border-top: 1px solid #222; padding-top: 2rem; margin-top: 3rem; color: #555; font-size: 0.8rem; text-align: center; }
+        @media (max-width: 480px) {
+            .container { padding: 1.2rem 1rem; }
+            .hero h1 { font-size: 1.3rem; }
+            .game-embed { max-width: none; }
+            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav><a href="/">← Prototype Lab</a></nav>
+
+        <img class="hero-cover" src="/games/prototype008-wallwars/og-image.png" alt="Wall Wars gameplay">
+
+        <div class="hero">
+            <h1>Dev Log — #008 Wall Wars</h1>
+            <p class="tagline">Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.</p>
+            <ul>
+                <li>Real-time multiplayer via WebSocket (2-4 players)</li>
+                <li>Create rooms with 4-letter codes, share with friends</li>
+                <li>AI fills empty slots automatically</li>
+                <li>Solo mode with AI opponent</li>
+                <li>No download, click and play</li>
+            </ul>
+        </div>
+
+        <!-- Game embed -->
+        <div class="game-embed">
+            <iframe src="/games/prototype008-wallwars/" loading="lazy" allow="autoplay"></iframe>
+            <div class="game-embed-note">Best on mobile — <a href="/games/prototype008-wallwars/">Open fullscreen</a></div>
+        </div>
+
+        <article>
+            <h2>Design Notes</h2>
+            <p>Prototype #008 — First real-time multiplayer game in the series.</p>
+            <p>The server runs on Cloudflare Workers with Durable Objects. Each room is a single DO instance that manages game state, tick loop, and WebSocket connections. Room codes use idFromName() so any Worker edge can resolve the same room.</p>
+            <p>The flood-fill BFS runs server-side every tick to determine territory ownership. When walls fully enclose an area, it flips to the wall owner. Simple mechanic, emergent strategy.</p>
+            <p>Ink system adds resource management — you can't wall spam. Regen is constant, so knowing when to save ink vs when to rush-build matters.</p>
+
+            <hr>
+
+            <h2>Dev Log</h2>
+            
+            <h3>Durable Object gotcha</h3>
+            <p>Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug.</p>
+
+            <h3>WebSocket non-Hibernation</h3>
+            <p>Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game.</p>
+
+            <h3>Client-side prediction</h3>
+            <p>Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks.</p>
+
+            <hr>
+
+            <h2>Credits</h2>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
+            <p style="margin-top: 0.5rem;">Prototype Lab series #008 by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+
+            <p style="margin-top: 1.5rem;">
+                <a href="/games/prototype008-wallwars/" class="play-btn">▶ Play Wall Wars</a>
+            </p>
+        </article>
+
+        <footer>
+            <p><a href="/">← Back to Prototype Lab</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+        </footer>
+    </div>
+</body>
+</html>
