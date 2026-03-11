@@ -7,7 +7,7 @@
     <title>Wall Wars</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        html, body { overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; position:fixed; width:100%; height:100%; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
+        html, body { overflow:hidden; -webkit-user-select:none; user-select:none; position:fixed; width:100%; height:100%; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
         body { background: linear-gradient(180deg, #87CEEB 0%, #B0E0FF 50%, #E0F4FF 100%); }
 
         /* Clouds decoration */
@@ -21,16 +21,16 @@
 
         /* Game container */
         #gc { position:relative; width:100%; height:100%; z-index:1; }
-        canvas { z-index:1; }
+        canvas { z-index:1; touch-action:none; }
 
         /* UI */
         #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:100; }
         .screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; padding:20px; }
         .screen:not(.active) { pointer-events:none !important; }
-        .screen.active { display:flex; }
+        .screen.active { display:flex; pointer-events:auto; }
 
         /* Buttons */
-        .btn { border:none; border-radius:14px; padding:14px 32px; font-size:1.1rem; font-weight:700; font-family:inherit; cursor:pointer; pointer-events:auto; touch-action:manipulation; transition: transform 0.1s, box-shadow 0.1s; letter-spacing:0.5px; min-width:200px; text-align:center; }
+        .btn { border:none; border-radius:14px; padding:14px 32px; font-size:1.1rem; font-weight:700; font-family:inherit; cursor:pointer; pointer-events:auto !important; touch-action:manipulation; position:relative; z-index:110; transition: transform 0.1s, box-shadow 0.1s; letter-spacing:0.5px; min-width:200px; text-align:center; -webkit-tap-highlight-color:rgba(0,0,0,0.1); }
         .btn:active { transform:scale(0.96); }
         .btn-green { background:linear-gradient(180deg,#6ECF5C,#4CAF50); color:#fff; box-shadow:0 4px 0 #388E3C, 0 6px 12px rgba(0,0,0,0.15); }
         .btn-blue { background:linear-gradient(180deg,#5BAFEF,#2196F3); color:#fff; box-shadow:0 4px 0 #1976D2, 0 6px 12px rgba(0,0,0,0.15); }
@@ -41,6 +41,7 @@
         /* Title */
         .game-title { font-size:2.6rem; font-weight:900; color:#fff; text-shadow: 0 3px 0 #1976D2, 0 6px 15px rgba(0,0,0,0.2); letter-spacing:4px; }
         .game-sub { font-size:0.9rem; color:#fff; opacity:0.8; text-shadow:0 1px 3px rgba(0,0,0,0.2); }
+        .game-ver { font-size:0.7rem; color:#fff; opacity:0.5; letter-spacing:2px; }
 
         /* Menu */
         #menu { gap:14px; }
@@ -54,7 +55,7 @@
 
         /* Friends */
         #friends { gap:14px; }
-        #friends input { background:rgba(255,255,255,0.9); border:3px solid #2196F3; color:#333; padding:12px 18px; font-size:1.4rem; text-align:center; width:180px; font-family:inherit; letter-spacing:8px; font-weight:700; border-radius:12px; pointer-events:auto; touch-action:manipulation; text-transform:uppercase; }
+        #friends input { background:rgba(255,255,255,0.9); border:3px solid #2196F3; color:#333; padding:12px 18px; font-size:1.4rem; text-align:center; width:180px; font-family:inherit; letter-spacing:8px; font-weight:700; border-radius:12px; pointer-events:auto !important; touch-action:manipulation; position:relative; z-index:110; text-transform:uppercase; }
         #friends input::placeholder { color:#aaa; letter-spacing:3px; font-size:0.9rem; font-weight:400; }
         #friends .btn-row { display:flex; gap:10px; }
 
@@ -117,10 +118,11 @@
         <div id="menu" class="screen active">
             <div class="game-title">WALL WARS</div>
             <div class="game-sub">Draw walls &middot; Claim territory &middot; 1v1</div>
+            <div class="game-ver">v1.2.0</div>
             <div class="btn-group">
-                <button class="btn btn-green" onclick="window._quickPlay()">Quick Play</button>
-                <button class="btn btn-blue" onclick="window._startSolo()">Solo Play</button>
-                <button class="btn btn-orange" onclick="window._showFriends()">Play with Friends</button>
+                <button class="btn btn-green" id="btn-quick">Quick Play</button>
+                <button class="btn btn-blue" id="btn-solo">Solo Play</button>
+                <button class="btn btn-orange" id="btn-friends">Play with Friends</button>
             </div>
         </div>
 
@@ -129,7 +131,7 @@
             <div class="spinner"></div>
             <div style="color:#fff; font-size:1.2rem; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.2);">Finding opponent...</div>
             <div id="match-timer">0s</div>
-            <button class="btn btn-gray btn-small" onclick="window._cancelMatch()">Cancel</button>
+            <button class="btn btn-gray btn-small" id="btn-cancel-match">Cancel</button>
         </div>
 
         <!-- Friends -->
@@ -137,10 +139,10 @@
             <div style="color:#fff; font-size:1.1rem; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.2);">Play with Friends</div>
             <input id="room-code-input" type="text" maxlength="4" placeholder="CODE" autocomplete="off" inputmode="text">
             <div class="btn-row">
-                <button class="btn btn-blue btn-small" onclick="window._joinRoom()">Join Room</button>
-                <button class="btn btn-orange btn-small" onclick="window._createRoom()">Create Room</button>
+                <button class="btn btn-blue btn-small" id="btn-join">Join Room</button>
+                <button class="btn btn-orange btn-small" id="btn-create">Create Room</button>
             </div>
-            <button class="btn btn-gray btn-small" onclick="window._setScreen('menu')">Back</button>
+            <button class="btn btn-gray btn-small" id="btn-friends-back">Back</button>
         </div>
 
         <!-- Lobby -->
@@ -152,8 +154,8 @@
             <div id="player-slots"></div>
             <div id="lobby-status" style="color:#fff; font-size:0.85rem; opacity:0.8;">Waiting for opponent...</div>
             <div style="display:flex; gap:10px;">
-                <button class="btn btn-green btn-small" id="start-btn" onclick="window._requestStart()" style="display:none">Start Game</button>
-                <button class="btn btn-gray btn-small" onclick="window._leaveRoom()">Cancel</button>
+                <button class="btn btn-green btn-small" id="start-btn" style="display:none">Start Game</button>
+                <button class="btn btn-gray btn-small" id="btn-leave">Cancel</button>
             </div>
         </div>
 
@@ -189,8 +191,8 @@
                 <div class="result-scores" id="result-scores"></div>
             </div>
             <div class="btn-group">
-                <button class="btn btn-green btn-small" id="retry-btn" onclick="window._retry()">Play Again</button>
-                <button class="btn btn-gray btn-small" onclick="window._backToMenu()">Menu</button>
+                <button class="btn btn-green btn-small" id="retry-btn">Play Again</button>
+                <button class="btn btn-gray btn-small" id="btn-menu">Menu</button>
             </div>
         </div>
     </div>
@@ -210,7 +212,7 @@ import * as THREE from 'three';
 const Analytics = (() => {
     const ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5s20juL7xT-8G7gJfSfXwGJSh7-UULfINI5AliWWMvyRmbrogGjfMxoKOSws74Y36/exec';
     const GAME_ID = 'prototype008-wallwars';
-    const VERSION = '1.1';
+    const VERSION = '1.2';
     let uid = localStorage.getItem('_ana_uid');
     const isReturning = !!uid;
     if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('_ana_uid', uid); }
@@ -328,7 +330,9 @@ const gc = document.getElementById('gc');
 const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
 renderer.setSize(gc.clientWidth, gc.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(CONFIG.bgColor, 0);  // transparent to show CSS gradient
+renderer.setClearColor(CONFIG.bgColor, 0);  // transparent so CSS gradient shows through on menu
+renderer.domElement.style.pointerEvents = 'auto';
+renderer.domElement.style.touchAction = 'none';
 gc.insertBefore(renderer.domElement, gc.firstChild);
 
 const scene = new THREE.Scene();
@@ -520,12 +524,14 @@ function getXY(e) {
     return { x: e.clientX, y: e.clientY };
 }
 
-gc.addEventListener('touchstart', (e) => { e.preventDefault(); drawing=true; handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
-gc.addEventListener('touchmove', (e) => { e.preventDefault(); if(drawing) handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
-gc.addEventListener('touchend', (e) => { e.preventDefault(); drawing=false; }, {passive:false});
-gc.addEventListener('mousedown', (e) => { e.preventDefault(); drawing=true; handleDraw(e.clientX, e.clientY); }, {passive:false});
-gc.addEventListener('mousemove', (e) => { if(drawing) handleDraw(e.clientX, e.clientY); });
-gc.addEventListener('mouseup', () => { drawing=false; });
+// Bindto canvas only — not gc — so UI buttons receive touch events
+const cvs = renderer.domElement;
+cvs.addEventListener('touchstart', (e) => { e.preventDefault(); drawing=true; handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
+cvs.addEventListener('touchmove', (e) => { e.preventDefault(); if(drawing) handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
+cvs.addEventListener('touchend', (e) => { e.preventDefault(); drawing=false; }, {passive:false});
+cvs.addEventListener('mousedown', (e) => { e.preventDefault(); drawing=true; handleDraw(e.clientX, e.clientY); }, {passive:false});
+cvs.addEventListener('mousemove', (e) => { if(drawing) handleDraw(e.clientX, e.clientY); });
+cvs.addEventListener('mouseup', () => { drawing=false; });
 
 // ─── Screen Management ────────────────────────────────────
 function setScreen(id) {
@@ -552,7 +558,6 @@ window._startSolo = function() {
     state.ink = CONFIG.maxInk;
     state.timer = CONFIG.gameTime;
     state.myColorIndex = 1;
-    if (soloStartedOnce) Analytics.retry();
     soloStartedOnce = true;
     initGrid();
     resetAI();
@@ -921,6 +926,24 @@ document.getElementById('room-code-input')?.addEventListener('keydown', (e) => {
 // Hide grid on start
 boardBg.visible = false;
 borderMesh.visible = false;
+
+// ─── Button Bindings (addEventListener for mobile reliability) ──
+function bindBtn(id, fn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+}
+bindBtn('btn-quick', () => window._quickPlay());
+bindBtn('btn-solo', () => window._startSolo());
+bindBtn('btn-friends', () => window._showFriends());
+bindBtn('btn-cancel-match', () => window._cancelMatch());
+bindBtn('btn-join', () => window._joinRoom());
+bindBtn('btn-create', () => window._createRoom());
+bindBtn('btn-friends-back', () => setScreen('menu'));
+bindBtn('start-btn', () => window._requestStart());
+bindBtn('btn-leave', () => window._leaveRoom());
+bindBtn('retry-btn', () => window._retry());
+bindBtn('btn-menu', () => window._backToMenu());
 
 </script>
 </body>
