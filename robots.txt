@@ -1,0 +1,35 @@
+# Prototype Lab — robots.txt
+# Allow all search engines + AI crawlers
+
+User-agent: *
+Allow: /
+Sitemap: https://ariescar.netlify.app/sitemap.xml
+
+# === AI Search Engine Crawlers ===
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Block pure training crawlers (optional — keep content for search, not training)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /

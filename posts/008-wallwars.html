@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Log — #008 Wall Wars | Prototype Lab</title>
+    <title>Wall Wars Dev Log — AI Game Development | Prototype Lab</title>
+    <meta name="description" content="Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI. Dev log covering design decisions, technical challenges, and AI-assisted development process.">
+    <link rel="canonical" href="https://ariescar.netlify.app/posts/008-wallwars.html">
     <meta property="og:title" content="Wall Wars — Build Walls, Claim Land!">
     <meta property="og:description" content="Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.">
-    <meta property="og:image" content="/games/prototype008-wallwars/og-image.png">
+    <meta property="og:image" content="https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png">
+    <meta property="og:url" content="https://ariescar.netlify.app/posts/008-wallwars.html">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Prototype Lab">
+    <meta property="article:author" content="https://x.com/AriescarTu">
+    <meta property="article:published_time" content="2026-03">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@AriescarTu">
+    <meta name="twitter:creator" content="@AriescarTu">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Wall Wars","description":"Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.","url":"https://ariescar.netlify.app/games/prototype008-wallwars/","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"Multiplayer, Three.js, Cloudflare Workers"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #008 Wall Wars","description":"Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","url":"https://ariescar.netlify.app/posts/008-wallwars.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/008-wallwars.html"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Wall Wars handle durable object gotcha?","acceptedAnswer":{"@type":"Answer","text":"Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug."}},{"@type":"Question","name":"How does Wall Wars handle websocket non-hibernation?","acceptedAnswer":{"@type":"Answer","text":"Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game."}},{"@type":"Question","name":"How does Wall Wars handle client-side prediction?","acceptedAnswer":{"@type":"Answer","text":"Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks."}}]}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -112,17 +124,31 @@
             <hr>
 
             <h2>Credits</h2>
-            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
-            <p style="margin-top: 0.5rem;">Prototype Lab series #008 by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank" rel="noopener">@quaternius</a></p>
 
             <p style="margin-top: 1.5rem;">
-                <a href="/games/prototype008-wallwars/" class="play-btn">▶ Play Wall Wars</a>
+                <a href="https://ariescar.netlify.app/games/prototype008-wallwars/" class="play-btn">▶ Play Wall Wars</a>
             </p>
+
+            <hr>
+
+            <!-- E-E-A-T Author Bio -->
+            <div class="author-bio" style="display:flex;gap:1rem;align-items:flex-start;padding:1.2rem;background:#111;border-radius:10px;margin-top:1rem;">
+                <div>
+                    <p style="color:#fff;font-weight:600;margin-bottom:0.3rem;">Built by Ariescar</p>
+                    <p style="color:#999;font-size:0.85rem;margin-bottom:0.5rem;">Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.</p>
+                    <p style="font-size:0.8rem;">
+                        <a href="https://x.com/AriescarTu" target="_blank" rel="noopener">X / Twitter</a>
+                        · <a href="https://linktr.ee/ariescar0326" target="_blank" rel="noopener">All Links</a>
+                        · <a href="/">More Games</a>
+                    </p>
+                </div>
+            </div>
         </article>
 
         <footer>
             <p><a href="/">← Back to Prototype Lab</a></p>
-            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab #008 · 2026-03 · <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
         </footer>
     </div>
 </body>

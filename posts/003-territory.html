@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Log — #003 Territory Conquest | Prototype Lab</title>
+    <title>Territory Conquest Dev Log — AI Game Development | Prototype Lab</title>
+    <meta name="description" content="4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser. Dev log covering design decisions, technical challenges, and AI-assisted development process.">
+    <link rel="canonical" href="https://ariescar.netlify.app/posts/003-territory.html">
     <meta property="og:title" content="Territory Conquest — Conquer the Grid!">
     <meta property="og:description" content="4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.">
-    <meta property="og:image" content="/games/prototype006-territory/og-image.png">
+    <meta property="og:image" content="https://ariescar.netlify.app/games/prototype006-territory/og-image.png">
+    <meta property="og:url" content="https://ariescar.netlify.app/posts/003-territory.html">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Prototype Lab">
+    <meta property="article:author" content="https://x.com/AriescarTu">
+    <meta property="article:published_time" content="2026-03">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@AriescarTu">
+    <meta name="twitter:creator" content="@AriescarTu">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Territory Conquest","description":"4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.","url":"https://ariescar.netlify.app/games/prototype006-territory/","image":"https://ariescar.netlify.app/games/prototype006-territory/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"4 players, Three.js, GLTF"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #003 Territory Conquest","description":"4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.","image":"https://ariescar.netlify.app/games/prototype006-territory/og-image.png","url":"https://ariescar.netlify.app/posts/003-territory.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/003-territory.html"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Territory Conquest handle flood fill at scale?","acceptedAnswer":{"@type":"Answer","text":"200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps."}},{"@type":"Question","name":"How does Territory Conquest handle influence map ai?","acceptedAnswer":{"@type":"Answer","text":"Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner."}},{"@type":"Question","name":"How does Territory Conquest handle procedural audio?","acceptedAnswer":{"@type":"Answer","text":"23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies."}}]}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -111,17 +123,31 @@
             <hr>
 
             <h2>Credits</h2>
-            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
-            <p style="margin-top: 0.5rem;">Prototype Lab series #003 by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank" rel="noopener">@quaternius</a></p>
 
             <p style="margin-top: 1.5rem;">
-                <a href="/games/prototype006-territory/" class="play-btn">▶ Play Territory Conquest</a>
+                <a href="https://ariescar.netlify.app/games/prototype006-territory/" class="play-btn">▶ Play Territory Conquest</a>
             </p>
+
+            <hr>
+
+            <!-- E-E-A-T Author Bio -->
+            <div class="author-bio" style="display:flex;gap:1rem;align-items:flex-start;padding:1.2rem;background:#111;border-radius:10px;margin-top:1rem;">
+                <div>
+                    <p style="color:#fff;font-weight:600;margin-bottom:0.3rem;">Built by Ariescar</p>
+                    <p style="color:#999;font-size:0.85rem;margin-bottom:0.5rem;">Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.</p>
+                    <p style="font-size:0.8rem;">
+                        <a href="https://x.com/AriescarTu" target="_blank" rel="noopener">X / Twitter</a>
+                        · <a href="https://linktr.ee/ariescar0326" target="_blank" rel="noopener">All Links</a>
+                        · <a href="/">More Games</a>
+                    </p>
+                </div>
+            </div>
         </article>
 
         <footer>
             <p><a href="/">← Back to Prototype Lab</a></p>
-            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab #003 · 2026-03 · <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
         </footer>
     </div>
 </body>

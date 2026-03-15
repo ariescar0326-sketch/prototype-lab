@@ -1,0 +1,45 @@
+# Prototype Lab
+
+> A series of 4 free 3D browser games built with AI-assisted development (Vibe Coding). Each game is a single HTML file powered by Three.js, playable instantly on mobile with no download. Created by Ariescar — an indie developer exploring AI-driven game production pipelines.
+
+## About
+
+Prototype Lab is an ongoing experiment in rapid game prototyping using AI tools (Claude, Cursor) combined with Three.js for 3D rendering. The project explores how a solo developer can ship playable browser games in hours instead of weeks using Vibe Coding workflows.
+
+Key technical features across all games:
+- Single-file HTML architecture (no build step, no bundler)
+- Three.js CDN with ES module import maps
+- GLTF 3D models with skeletal animation
+- Procedural audio via Web Audio API (zero audio files)
+- Mobile-first 9:16 portrait design
+- Real-time multiplayer via Cloudflare Workers + Durable Objects
+
+## Games
+
+- [Wall Wars](https://ariescar.netlify.app/games/prototype008-wallwars/): Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.
+- [Territory Conquest](https://ariescar.netlify.app/games/prototype006-territory/): 4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.
+- [Sky Roller](https://ariescar.netlify.app/games/prototype002-skyroller/): 7-player ball race on a sky track. Dodge crates, collect buffs, ragdoll physics. Play instantly in your browser.
+- [Monster Slash](https://ariescar.netlify.app/games/prototype001-monsterslash/): 3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.
+
+## Dev Logs
+
+- [Wall Wars Dev Log](https://ariescar.netlify.app/posts/008-wallwars.html): Durable Object gotcha, WebSocket non-Hibernation, Client-side prediction.
+- [Territory Conquest Dev Log](https://ariescar.netlify.app/posts/003-territory.html): Flood fill at scale, Influence map AI, Procedural audio.
+- [Sky Roller Dev Log](https://ariescar.netlify.app/posts/002-skyroller.html): SkinnedMesh clone trap, Animation binding, What makes it feel right.
+- [Monster Slash Dev Log](https://ariescar.netlify.app/posts/001-monsterslash.html): Screen shake, Combo timing, What's next.
+
+## Technical Stack
+
+- Rendering: Three.js (CDN, ES modules)
+- 3D Assets: GLTF models by @quaternius
+- Audio: Web Audio API procedural synthesis
+- Multiplayer: Cloudflare Workers + Durable Objects + WebSocket
+- Hosting: Netlify (blog + games), GitHub Pages (individual repos)
+- Analytics: Google Apps Script + Sheets (anonymous, no cookies)
+- Development: AI-assisted (Claude + Cursor), single-file HTML pattern
+
+## Contact
+
+- Author: Ariescar (@AriescarTu on X)
+- Links: https://linktr.ee/ariescar0326
+- Support: https://ko-fi.com/ariescar

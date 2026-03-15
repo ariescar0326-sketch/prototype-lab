@@ -5,6 +5,14 @@
  * 讀取 games.json，產出:
  *   1. index.html   — 首頁產品卡列表（新→舊）
  *   2. posts/NNN-{slug}.html — 每款遊戲的 Dev Log 頁面
+ *   3. sitemap.xml  — SEO sitemap（自動產生）
+ *   4. llms.txt     — AI 搜索引擎索引（自動產生）
+ *
+ * SEO 功能（自動注入，不影響視覺）:
+ *   - Schema.org JSON-LD（WebSite + VideoGame + FAQPage）
+ *   - E-E-A-T 作者信號（author bio + datePublished）
+ *   - Canonical URLs + meta description
+ *   - Open Graph + Twitter Card
  *
  * 用法:
  *   node build-blog.js                  # 產出到 infra/blog/
@@ -20,6 +28,15 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const outDir = args.includes('--out') ? args[args.indexOf('--out') + 1] : __dirname;
+
+// ─── Site config (SEO) ───
+const SITE_URL = 'https://ariescar.netlify.app';
+const AUTHOR = {
+    name: 'Ariescar',
+    url: 'https://x.com/AriescarTu',
+    linktree: 'https://linktr.ee/ariescar0326',
+    description: 'Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.',
+};
 
 // ─── Read game registry ───
 const gamesPath = join(__dirname, 'games.json');
@@ -48,6 +65,95 @@ function coverHtml(g) {
     return `<img src="/games/${g.repo}/${cover}" alt="${esc(g.name)}" loading="lazy">`;
 }
 
+// ─── Schema.org JSON-LD helpers ───
+function schemaWebSite(games) {
+    return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Prototype Lab",
+        "url": SITE_URL,
+        "description": "3D browser games you can play instantly. Built with Three.js and AI-assisted development. No download required.",
+        "author": {
+            "@type": "Person",
+            "name": AUTHOR.name,
+            "url": AUTHOR.url,
+            "description": AUTHOR.description,
+            "sameAs": [AUTHOR.url, AUTHOR.linktree]
+        },
+        "hasPart": games.map(g => ({
+            "@type": "VideoGame",
+            "name": g.name,
+            "url": `${SITE_URL}/games/${g.repo}/`
+        }))
+    });
+}
+
+function schemaVideoGame(g) {
+    const num = String(g.number).padStart(3, '0');
+    return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": ["VideoGame", "SoftwareApplication"],
+        "name": g.name,
+        "description": g.description,
+        "url": `${SITE_URL}/games/${g.repo}/`,
+        "image": `${SITE_URL}/games/${g.repo}/og-image.png`,
+        "playMode": (g.tags || []).some(t => t.toLowerCase().includes('multiplayer') || t.includes('players')) ? "MultiPlayer" : "SinglePlayer",
+        "gamePlatform": ["Web Browser", "Mobile Browser"],
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+        "author": { "@type": "Person", "name": AUTHOR.name, "url": AUTHOR.url },
+        "datePublished": g.date || "2026-03",
+        "inLanguage": "en",
+        "genre": (g.tags || []).join(', ')
+    });
+}
+
+function schemaFAQ(g) {
+    // Convert devLog entries into FAQ format for AI search engines
+    const qaItems = (g.devLog || []).filter(s => s.title && s.body).map(s => ({
+        "@type": "Question",
+        "name": `How does ${g.name} handle ${s.title.toLowerCase()}?`,
+        "acceptedAnswer": {
+            "@type": "Answer",
+            "text": s.body
+        }
+    }));
+    if (!qaItems.length) return '';
+    return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": qaItems
+    });
+}
+
+function schemaArticle(g) {
+    const num = String(g.number).padStart(3, '0');
+    return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": `Dev Log — #${num} ${g.name}`,
+        "description": g.description,
+        "image": `${SITE_URL}/games/${g.repo}/og-image.png`,
+        "url": `${SITE_URL}/posts/${num}-${g.slug}.html`,
+        "datePublished": g.date || "2026-03",
+        "dateModified": new Date().toISOString().slice(0, 10),
+        "author": {
+            "@type": "Person",
+            "name": AUTHOR.name,
+            "url": AUTHOR.url,
+            "description": AUTHOR.description,
+            "sameAs": [AUTHOR.url, AUTHOR.linktree]
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Prototype Lab",
+            "url": SITE_URL
+        },
+        "mainEntityOfPage": `${SITE_URL}/posts/${num}-${g.slug}.html`
+    });
+}
+
 // ─── Index page ───
 function buildIndex(games) {
     const cards = games
@@ -70,17 +176,26 @@ function buildIndex(games) {
         }).join('\n');
 
     const newestRepo = games.sort((a, b) => b.number - a.number)[0]?.repo || '';
+    const siteDescription = `${games.length} free 3D browser games built with AI-assisted development. Play instantly on mobile — no download required. Three.js, procedural audio, and Vibe Coding.`;
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototype Lab — by Ariescar</title>
-    <meta property="og:title" content="Prototype Lab — by Ariescar">
-    <meta property="og:description" content="3D browser games you can play instantly. No download.">
-    <meta property="og:image" content="/games/${newestRepo}/og-image.png">
+    <title>Prototype Lab — Free 3D Browser Games by Ariescar</title>
+    <meta name="description" content="${esc(siteDescription)}">
+    <link rel="canonical" href="${SITE_URL}/">
+    <meta property="og:title" content="Prototype Lab — Free 3D Browser Games">
+    <meta property="og:description" content="${esc(siteDescription)}">
+    <meta property="og:image" content="${SITE_URL}/games/${newestRepo}/og-image.png">
+    <meta property="og:url" content="${SITE_URL}/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Prototype Lab">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@AriescarTu">
+    <meta name="twitter:creator" content="@AriescarTu">
+    <script type="application/ld+json">${schemaWebSite(games)}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -243,16 +358,32 @@ function buildPost(g) {
             <h3>${esc(s.title)}</h3>
             <p>${esc(s.body)}</p>`).join('\n');
 
+    const postUrl = `${SITE_URL}/posts/${num}-${g.slug}.html`;
+    const gameUrl = `${SITE_URL}/games/${g.repo}/`;
+    const faqSchema = schemaFAQ(g);
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Log — #${num} ${esc(g.name)} | Prototype Lab</title>
+    <title>${esc(g.name)} Dev Log — AI Game Development | Prototype Lab</title>
+    <meta name="description" content="${esc(g.description)} Dev log covering design decisions, technical challenges, and AI-assisted development process.">
+    <link rel="canonical" href="${postUrl}">
     <meta property="og:title" content="${esc(g.name)} — ${esc(g.ogTagline || g.tagline)}">
     <meta property="og:description" content="${esc(g.description)}">
-    <meta property="og:image" content="/games/${g.repo}/og-image.png">
+    <meta property="og:image" content="${SITE_URL}/games/${g.repo}/og-image.png">
+    <meta property="og:url" content="${postUrl}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Prototype Lab">
+    <meta property="article:author" content="${AUTHOR.url}">
+    <meta property="article:published_time" content="${g.date || '2026-03'}">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@AriescarTu">
+    <meta name="twitter:creator" content="@AriescarTu">
+    <script type="application/ld+json">${schemaVideoGame(g)}</script>
+    <script type="application/ld+json">${schemaArticle(g)}</script>
+    ${faqSchema ? `<script type="application/ld+json">${faqSchema}</script>` : ''}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -342,17 +473,31 @@ ${features}
             <hr>
 
             <h2>Credits</h2>
-            <p>3D models by <a href="https://quaternius.com/" target="_blank">@quaternius</a></p>
-            <p style="margin-top: 0.5rem;">Prototype Lab series #${num} by <a href="https://x.com/AriescarTu" target="_blank">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326" target="_blank">linktr.ee/ariescar0326</a></p>
+            <p>3D models by <a href="https://quaternius.com/" target="_blank" rel="noopener">@quaternius</a></p>
 
             <p style="margin-top: 1.5rem;">
-                <a href="/games/${g.repo}/" class="play-btn">▶ Play ${esc(g.name)}</a>
+                <a href="${gameUrl}" class="play-btn">▶ Play ${esc(g.name)}</a>
             </p>
+
+            <hr>
+
+            <!-- E-E-A-T Author Bio -->
+            <div class="author-bio" style="display:flex;gap:1rem;align-items:flex-start;padding:1.2rem;background:#111;border-radius:10px;margin-top:1rem;">
+                <div>
+                    <p style="color:#fff;font-weight:600;margin-bottom:0.3rem;">Built by ${AUTHOR.name}</p>
+                    <p style="color:#999;font-size:0.85rem;margin-bottom:0.5rem;">${esc(AUTHOR.description)}</p>
+                    <p style="font-size:0.8rem;">
+                        <a href="${AUTHOR.url}" target="_blank" rel="noopener">X / Twitter</a>
+                        · <a href="${AUTHOR.linktree}" target="_blank" rel="noopener">All Links</a>
+                        · <a href="/">More Games</a>
+                    </p>
+                </div>
+            </div>
         </article>
 
         <footer>
             <p><a href="/">← Back to Prototype Lab</a></p>
-            <p style="margin-top:0.5rem;">Prototype Lab series by <a href="https://x.com/AriescarTu">@AriescarTu</a></p>
+            <p style="margin-top:0.5rem;">Prototype Lab #${num} · ${g.date || '2026'} · <a href="${AUTHOR.url}">@AriescarTu</a></p>
         </footer>
     </div>
 </body>
@@ -375,4 +520,83 @@ for (const g of games) {
     console.log(`  ✅ posts/${num}-${g.slug}.html`);
 }
 
-console.log(`\n🎉 Done! ${games.length + 1} files written to ${outDir}`);
+// ─── Sitemap.xml ───
+function buildSitemap(games) {
+    const today = new Date().toISOString().slice(0, 10);
+    const urls = [
+        `  <url><loc>${SITE_URL}/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`
+    ];
+    for (const g of games) {
+        const num = String(g.number).padStart(3, '0');
+        urls.push(`  <url><loc>${SITE_URL}/posts/${num}-${g.slug}.html</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`);
+        urls.push(`  <url><loc>${SITE_URL}/games/${g.repo}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`);
+    }
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`;
+}
+
+const sitemapXml = buildSitemap(games);
+writeFileSync(join(outDir, 'sitemap.xml'), sitemapXml);
+console.log('  ✅ sitemap.xml');
+
+// ─── llms.txt (auto-generated from games.json) ───
+function buildLlmsTxt(games) {
+    const gameList = games.sort((a, b) => b.number - a.number).map(g => {
+        const num = String(g.number).padStart(3, '0');
+        return `- [${g.name}](${SITE_URL}/games/${g.repo}/): ${g.description}`;
+    }).join('\n');
+    const devLogList = games.sort((a, b) => b.number - a.number).map(g => {
+        const num = String(g.number).padStart(3, '0');
+        const topics = (g.devLog || []).map(s => s.title).join(', ');
+        return `- [${g.name} Dev Log](${SITE_URL}/posts/${num}-${g.slug}.html): ${topics || 'Design and development notes'}.`;
+    }).join('\n');
+
+    return `# Prototype Lab
+
+> A series of ${games.length} free 3D browser games built with AI-assisted development (Vibe Coding). Each game is a single HTML file powered by Three.js, playable instantly on mobile with no download. Created by ${AUTHOR.name} — an indie developer exploring AI-driven game production pipelines.
+
+## About
+
+Prototype Lab is an ongoing experiment in rapid game prototyping using AI tools (Claude, Cursor) combined with Three.js for 3D rendering. The project explores how a solo developer can ship playable browser games in hours instead of weeks using Vibe Coding workflows.
+
+Key technical features across all games:
+- Single-file HTML architecture (no build step, no bundler)
+- Three.js CDN with ES module import maps
+- GLTF 3D models with skeletal animation
+- Procedural audio via Web Audio API (zero audio files)
+- Mobile-first 9:16 portrait design
+- Real-time multiplayer via Cloudflare Workers + Durable Objects
+
+## Games
+
+${gameList}
+
+## Dev Logs
+
+${devLogList}
+
+## Technical Stack
+
+- Rendering: Three.js (CDN, ES modules)
+- 3D Assets: GLTF models by @quaternius
+- Audio: Web Audio API procedural synthesis
+- Multiplayer: Cloudflare Workers + Durable Objects + WebSocket
+- Hosting: Netlify (blog + games), GitHub Pages (individual repos)
+- Analytics: Google Apps Script + Sheets (anonymous, no cookies)
+- Development: AI-assisted (Claude + Cursor), single-file HTML pattern
+
+## Contact
+
+- Author: ${AUTHOR.name} (@AriescarTu on X)
+- Links: ${AUTHOR.linktree}
+- Support: https://ko-fi.com/ariescar
+`;
+}
+
+const llmsTxt = buildLlmsTxt(games);
+writeFileSync(join(outDir, 'llms.txt'), llmsTxt);
+console.log('  ✅ llms.txt');
+
+console.log(`\n🎉 Done! ${games.length + 3} files written to ${outDir}`);
