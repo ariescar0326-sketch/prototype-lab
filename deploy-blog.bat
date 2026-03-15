@@ -40,8 +40,9 @@ git config user.email "ariescar0326@gmail.com"
 git add -A
 git commit -m "blog: update %date:~0,10%" 2>nul
 if errorlevel 1 (
-    echo   No changes to commit.
-    goto :done
+    echo   No new changes to commit.
+) else (
+    echo   Committed.
 )
 
 REM --- Step 4: Push ---

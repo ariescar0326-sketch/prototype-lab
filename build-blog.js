@@ -195,6 +195,7 @@ function buildIndex(games) {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@AriescarTu">
     <meta name="twitter:creator" content="@AriescarTu">
+    <meta name="google-site-verification" content="ZLlk78BTZ0Cq8LxSjUvbsJpfHSWkOzoBVVd9jhkDBf4" />
     <script type="application/ld+json">${schemaWebSite(games)}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -381,6 +382,7 @@ function buildPost(g) {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@AriescarTu">
     <meta name="twitter:creator" content="@AriescarTu">
+    <meta name="google-site-verification" content="ZLlk78BTZ0Cq8LxSjUvbsJpfHSWkOzoBVVd9jhkDBf4" />
     <script type="application/ld+json">${schemaVideoGame(g)}</script>
     <script type="application/ld+json">${schemaArticle(g)}</script>
     ${faqSchema ? `<script type="application/ld+json">${faqSchema}</script>` : ''}
