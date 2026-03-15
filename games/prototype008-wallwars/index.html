@@ -4,200 +4,338 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Wall Wars</title>
+    <title>Crystal Battle — Build Walls, Claim Land! | Play Free Online</title>
+    <!-- === Social Sharing (STEP 10.0 auto-injected) === -->
+    <meta property="og:title" content="Crystal Battle — Build Walls, Claim Land!">
+    <meta property="og:description" content="Real-time multiplayer territory war. Draw walls on a grid, enclose areas to claim them. Play with friends or solo vs AI.">
+    <meta property="og:image" content="https://ariescar0326-sketch.github.io/prototype008-wallwars/og-image.png">
+    <meta property="og:url" content="https://ariescar0326-sketch.github.io/prototype008-wallwars/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Real-time multiplayer territory war. Draw walls on a grid, enclose areas to claim them. Play with friends or solo vs AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        html, body { overflow:hidden; -webkit-user-select:none; user-select:none; position:fixed; width:100vw; height:100svh; height:100vh; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
-        @supports (height: 100svh) { html, body { height: 100svh; } }
-        body { background: linear-gradient(180deg, #87CEEB 0%, #B0E0FF 50%, #E0F4FF 100%); }
+        html, body { overflow:hidden; -webkit-user-select:none; user-select:none;
+            position:fixed; width:100vw; height:100vh; height:100svh;
+            font-family:'MedievalSharp','Rajdhani','Exo 2','Segoe UI','Helvetica Neue',Arial,sans-serif; }
+        @supports (height:100svh) { html, body { height:100svh; } }
+        /* Clash Royale: deep purple-blue gradient */
+        body { background:#020010 url('ui/bg.webp') center/cover no-repeat fixed; }
 
-        /* Clouds decoration */
-        .cloud { position:absolute; background:#fff; border-radius:50px; opacity:0.6; z-index:0; pointer-events:none; }
-        .cloud::before, .cloud::after { content:''; position:absolute; background:#fff; border-radius:50%; }
-        .cloud-1 { width:120px; height:40px; top:8%; right:10%; }
-        .cloud-1::before { width:50px; height:50px; top:-25px; left:20px; }
-        .cloud-1::after { width:35px; height:35px; top:-15px; left:55px; }
-        .cloud-2 { width:80px; height:28px; top:15%; left:5%; opacity:0.4; }
-        .cloud-2::before { width:35px; height:35px; top:-18px; left:15px; }
+        @media (min-width:600px) and (orientation:landscape) {
+            body { display:flex; justify-content:center; align-items:center; }
+            #gc { width:min(56.25vh,100vw); height:100vh; height:100svh; }
+        }
 
-        /* Game container */
-        #gc { position:relative; width:100%; height:100%; z-index:1; padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0); }
+        /* Cosmic starfield + flowing galaxy background */
+        .starfield { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden; }
+        .star { position:absolute; border-radius:50%; background:#fff; will-change:transform; }
+        #galaxy-canvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:0.12; }
+
+        #gc { position:relative; width:100%; height:100%; z-index:1; }
         canvas { z-index:1; touch-action:none; }
 
-        /* UI */
         #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:100; }
-        .screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; padding:20px; padding-top:max(20px, env(safe-area-inset-top)); padding-bottom:max(20px, env(safe-area-inset-bottom)); }
-        .screen:not(.active) { pointer-events:none !important; }
+        .screen { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:16px; padding:20px; }
+        .screen:not(.active) { pointer-events:none!important; }
         .screen.active { display:flex; pointer-events:auto; }
 
-        /* Buttons */
-        .btn { border:none; border-radius:14px; padding:14px 32px; font-size:clamp(0.9rem, 3vw, 1.1rem); font-weight:700; font-family:inherit; cursor:pointer; pointer-events:auto !important; touch-action:manipulation; position:relative; z-index:110; transition: transform 0.1s, box-shadow 0.1s; letter-spacing:0.5px; min-width:200px; min-height:48px; text-align:center; -webkit-tap-highlight-color:rgba(0,0,0,0.1); }
+        /* Crystal image buttons — crystal04 as independent ::after image layer */
+        :root { --btn-img-w:210px; --btn-img-h:136px; }
+        .btn { border:none; padding:14px 32px; font-size:clamp(0.9rem,3vw,1.1rem); font-weight:700;
+            font-family:'MedievalSharp',sans-serif; cursor:pointer; pointer-events:auto!important; touch-action:manipulation;
+            position:relative; z-index:110; transition:transform 0.15s,filter 0.25s; letter-spacing:3px;
+            min-width:220px; min-height:52px; text-align:center; text-transform:uppercase;
+            -webkit-tap-highlight-color:rgba(0,0,0,0.1);
+            background:none; border-radius:0;
+            color:#e0f4ff;
+            text-shadow:0 0 10px rgba(100,200,255,0.6),0 1px 2px rgba(0,0,0,0.8); }
+        /* The crystal04 image — sized independently via CSS vars */
+        .btn::after { content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+            width:var(--btn-img-w); height:var(--btn-img-h);
+            background:url('ui/crystal04.webp') center/100% 100% no-repeat;
+            z-index:-1; pointer-events:none; filter:brightness(0.85); transition:filter 0.25s; }
+        .btn:hover::after, .btn:focus::after { filter:brightness(1.15); }
+        .btn:hover, .btn:focus { text-shadow:0 0 15px rgba(150,220,255,0.8),0 0 30px rgba(80,180,255,0.4); }
         .btn:active { transform:scale(0.96); }
-        .btn-green { background:linear-gradient(180deg,#6ECF5C,#4CAF50); color:#fff; box-shadow:0 4px 0 #388E3C, 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-blue { background:linear-gradient(180deg,#5BAFEF,#2196F3); color:#fff; box-shadow:0 4px 0 #1976D2, 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-orange { background:linear-gradient(180deg,#FFB74D,#FF9800); color:#fff; box-shadow:0 4px 0 #F57C00, 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-gray { background:linear-gradient(180deg,#BDBDBD,#9E9E9E); color:#fff; box-shadow:0 4px 0 #757575, 0 6px 12px rgba(0,0,0,0.1); }
-        .btn-small { padding:10px 20px; font-size:clamp(0.8rem, 2.5vw, 0.9rem); min-width:120px; min-height:48px; border-radius:10px; }
+        .btn:active::after { filter:brightness(0.75); }
+        .btn-gray::after { filter:brightness(0.5) saturate(0.4); }
+        .btn-gray { color:#9098a8; text-shadow:0 0 6px rgba(100,120,160,0.3); }
+        .btn-gray:hover::after { filter:brightness(0.7) saturate(0.6); }
+        .btn-gray:hover { color:#c0c8d8; }
+        .btn-small { padding:10px 20px; font-size:clamp(0.7rem,2.2vw,0.85rem); min-width:140px; min-height:44px; }
 
-        /* Title */
-        .game-title { font-size:clamp(1.8rem, 7vw, 2.6rem); font-weight:900; color:#fff; text-shadow: 0 3px 0 #1976D2, 0 6px 15px rgba(0,0,0,0.2); letter-spacing:4px; }
-        .game-sub { font-size:clamp(0.75rem, 2.5vw, 0.9rem); color:#fff; opacity:0.8; text-shadow:0 1px 3px rgba(0,0,0,0.2); }
-        .game-ver { font-size:clamp(0.6rem, 1.8vw, 0.7rem); color:#fff; opacity:0.5; letter-spacing:2px; }
+        /* Menu hover crystal indicator — uses CSS vars for tuning */
+        :root { --hc-w:32px; --hc-h:38px; --hc-x:-40px; }
+        .btn.hovered::before { content:''; position:absolute; left:var(--hc-x); top:50%; transform:translateY(-50%);
+            width:var(--hc-w); height:var(--hc-h); background:url('ui/crystal07.webp') center/contain no-repeat;
+            filter:drop-shadow(0 0 8px rgba(80,200,255,0.6)); pointer-events:none; }
 
-        /* Menu */
-        #menu { gap:14px; }
-        #menu .btn-group { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+        /* Crystal title glow — two lines */
+        .game-title { font-family:'MedievalSharp',sans-serif; font-size:clamp(2.2rem,9vw,3.5rem); font-weight:900; color:#a0e0ff;
+            text-shadow:0 0 20px rgba(80,180,255,0.6),0 0 40px rgba(46,156,255,0.25),0 0 80px rgba(46,156,255,0.1),0 3px 0 #1A5A8A,0 6px 0 #0D3050,0 9px 20px rgba(0,0,0,0.5);
+            letter-spacing:6px; text-align:center; line-height:1.15; }
+        .game-ver { font-size:clamp(0.6rem,1.8vw,0.7rem); color:#80D0FF; opacity:0.3; letter-spacing:2px; }
 
-        /* Matching */
+        #menu { gap:18px; }
+        #menu .btn-group { display:flex; flex-direction:column; gap:24px; margin-top:8px; }
+        /* Per-screen button image sizes */
+        #matching .btn::after { width:145px; height:108px; }
+        #friends .btn::after, #lobby .btn::after { width:115px; height:98px; }
+        #gameover .btn::after { width:145px; height:108px; }
+
         #matching { gap:20px; }
-        #matching .spinner { width:50px; height:50px; border:4px solid rgba(255,255,255,0.3); border-top:4px solid #fff; border-radius:50%; animation:spin 0.8s linear infinite; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        #match-timer { font-size:0.85rem; color:#fff; opacity:0.7; }
+        #matching .spinner { width:50px; height:50px; border:4px solid rgba(80,180,255,0.2);
+            border-top:4px solid #80D0FF; border-radius:50%; animation:spin 0.8s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+        #match-timer { font-size:0.85rem; color:#80D0FF; opacity:0.7; }
 
-        /* Friends */
         #friends { gap:14px; }
-        #friends input { background:rgba(255,255,255,0.9); border:3px solid #2196F3; color:#333; padding:12px 18px; font-size:1.4rem; text-align:center; width:180px; font-family:inherit; letter-spacing:8px; font-weight:700; border-radius:12px; pointer-events:auto !important; touch-action:manipulation; position:relative; z-index:110; text-transform:uppercase; }
+        #friends input { background:rgba(255,255,255,0.9); border:3px solid rgba(80,180,255,0.4); color:#333; padding:12px 18px;
+            font-size:1.4rem; text-align:center; width:180px; font-family:inherit; letter-spacing:8px; font-weight:700;
+            border-radius:12px; pointer-events:auto!important; touch-action:manipulation; z-index:110; text-transform:uppercase; }
         #friends input::placeholder { color:#aaa; letter-spacing:3px; font-size:0.9rem; font-weight:400; }
         #friends .btn-row { display:flex; gap:10px; }
 
-        /* Lobby */
         #lobby { gap:14px; }
-        .room-badge { background:rgba(255,255,255,0.9); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:16px; padding:10px 24px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        .room-label { font-size:0.7rem; color:#999; text-transform:uppercase; letter-spacing:2px; }
-        .room-code { font-size:clamp(1.8rem, 6vw, 2.4rem); font-weight:900; color:#2196F3; letter-spacing:10px; }
-        .player-slot { background:rgba(255,255,255,0.85); border-radius:12px; padding:12px 20px; display:flex; align-items:center; gap:12px; min-width:220px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
-        .player-slot .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:#fff; font-weight:700; }
-        .player-slot .pname { font-weight:600; color:#333; font-size:0.95rem; }
-        .player-slot .ptag { font-size:0.75rem; color:#999; }
+        .room-badge { background:rgba(13,11,46,0.9); border:2px solid rgba(80,180,255,0.3); backdrop-filter:blur(8px);
+            border-radius:16px; padding:10px 24px; text-align:center; box-shadow:0 0 15px rgba(80,180,255,0.15); }
+        .room-label { font-size:0.7rem; color:#80D0FF; opacity:0.6; text-transform:uppercase; letter-spacing:2px; }
+        .room-code { font-size:clamp(1.8rem,6vw,2.4rem); font-weight:900; color:#80D0FF; letter-spacing:10px; }
+        .player-slot { background:rgba(30,20,60,0.85); border:1px solid rgba(80,180,255,0.2); border-radius:12px;
+            padding:12px 20px; display:flex; align-items:center; gap:12px; min-width:220px; }
+        .player-slot .avatar { width:36px; height:36px; border-radius:8px; display:flex; align-items:center;
+            justify-content:center; font-size:1.2rem; color:#fff; font-weight:700; }
+        .player-slot .pname { font-weight:600; color:#E8E0D0; font-size:0.95rem; }
+        .player-slot .ptag { font-size:0.75rem; color:#80D0FF; opacity:0.6; }
         .player-slot.empty { opacity:0.4; }
 
-        /* Countdown */
         #countdown { gap:0; }
-        .count-num { font-size:clamp(4rem, 15vw, 6rem); font-weight:900; color:#fff; text-shadow:0 4px 0 #F57C00, 0 8px 20px rgba(0,0,0,0.2); animation:pulse 1s infinite; }
+        .count-num { font-size:clamp(4rem,15vw,6rem); font-weight:900; color:#80D0FF;
+            text-shadow:0 0 20px rgba(80,180,255,0.5),0 4px 0 #2060A0,0 8px 20px rgba(0,0,0,0.4); animation:pulse 1s infinite; }
         @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
 
-        /* HUD - matches reference image 2 layout */
+        /* === FIGHTING GAME HUD (Clash Royale) === */
         #hud { display:none; padding:0; pointer-events:none; }
         #hud.active { display:block; }
-        .hud-top { position:absolute; top:env(safe-area-inset-top,12px); left:12px; right:12px; display:flex; justify-content:space-between; align-items:center; z-index:101; }
-        .hud-timer { background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#fff; padding:6px 14px; border-radius:10px; font-size:clamp(0.9rem, 3vw, 1.1rem); font-weight:700; font-variant-numeric:tabular-nums; }
-        .hud-opponent { display:flex; align-items:center; gap:8px; }
-        .hud-opponent .opp-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:0.85rem; }
-        .hud-opponent .opp-info { font-size:0.75rem; color:rgba(0,0,0,0.6); font-weight:600; }
-        .hud-bottom { position:absolute; bottom:max(env(safe-area-inset-bottom,12px),12px); left:12px; right:12px; display:flex; align-items:center; gap:10px; z-index:101; }
-        .hud-me { display:flex; align-items:center; gap:8px; flex:1; }
-        .hud-me .my-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; flex-shrink:0; }
-        .hud-me .my-info { flex:1; }
-        .hud-me .my-name { font-size:0.75rem; color:rgba(0,0,0,0.6); font-weight:600; }
-        .ink-bar { width:100%; height:8px; background:rgba(0,0,0,0.15); border-radius:4px; overflow:hidden; margin-top:3px; }
-        .ink-fill { height:100%; border-radius:4px; transition:width 0.1s; }
 
-        /* Game Over */
-        #gameover { gap:14px; }
-        #gameover .result-card { background:rgba(255,255,255,0.9); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:20px; padding:24px 32px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.1); }
-        #gameover .result-title { font-size:clamp(1.5rem, 5vw, 2rem); font-weight:900; }
+        .hud-bar { position:absolute; top:var(--hud-top,18%);
+            left:var(--board-left,10px); right:var(--board-right,10px);
+            display:flex; align-items:center; gap:4px; z-index:101; }
+
+        .p-avatar { width:36px; height:42px;
+            display:flex; align-items:center; justify-content:center;
+            color:transparent; font-size:0; flex-shrink:0;
+            background:transparent!important; }
+
+        .rank-wrap { width:22px; height:26px; background:linear-gradient(180deg,#60C0FF,#3090D0);
+            clip-path:polygon(50% 0%,100% 12%,100% 68%,50% 100%,0% 68%,0% 12%);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .rank-inner { width:18px; height:22px; background:linear-gradient(180deg,#1B1464,#0D0B2E);
+            clip-path:polygon(50% 0%,100% 12%,100% 68%,50% 100%,0% 68%,0% 12%);
+            display:flex; align-items:center; justify-content:center;
+            color:#80D0FF; font-size:10px; text-shadow:0 0 4px rgba(80,180,255,0.5); line-height:1; }
+
+        .p-name { font-size:clamp(0.7rem,2.4vw,0.85rem); color:#E8E0D0; font-weight:700; white-space:nowrap;
+            text-shadow:0 1px 3px rgba(0,0,0,0.8); flex-shrink:1; overflow:hidden; text-overflow:ellipsis; max-width:60px; }
+
+        .hud-center { flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; margin:0 2px; min-width:0; }
+        .hud-names { display:flex; align-items:center; width:100%; justify-content:space-between; margin-bottom:2px; position:relative; }
+        .hud-names .p-name { max-width:70px; }
+
+        .territory-bars { display:flex; align-items:center; width:100%; position:relative; z-index:2; }
+        .terr-bar { flex:1; height:7px; background:rgba(0,0,0,0.5); border:1px solid rgba(80,180,255,0.15); overflow:hidden; }
+        .terr-left { border-radius:4px 0 0 4px; }
+        .terr-right { border-radius:0 4px 4px 0; }
+        .terr-left .terr-fill { float:right; height:100%; width:0%;
+            background:linear-gradient(to left,#2E9CFF,#80CFFF); border-radius:4px 0 0 4px; transition:width 0.3s; }
+        .terr-right .terr-fill { height:100%; width:0%;
+            background:linear-gradient(to right,#FF3B3B,#FF7B7B); border-radius:0 4px 4px 0; transition:width 0.3s; }
+
+        :root { --timer-img-w:250px; --timer-img-h:100px; --timer-img-y:-6px; }
+        .hud-timer { padding:3px 10px; background:none; color:#ffffff; font-weight:900;
+            font-size:clamp(1rem,3.5vw,1.3rem); flex-shrink:0; position:absolute;
+            left:50%; transform:translateX(-50%);
+            font-variant-numeric:tabular-nums; border:none; border-radius:0;
+            text-shadow:0 0 10px rgba(200,230,255,0.9), 0 0 4px rgba(255,255,255,0.5); z-index:1; }
+        .hud-timer::before { content:''; position:absolute; left:50%; top:50%;
+            transform:translate(-50%,-50%) translateY(var(--timer-img-y));
+            width:var(--timer-img-w); height:var(--timer-img-h);
+            background:url('ui/crystal06.webp') center/contain no-repeat;
+            pointer-events:none; z-index:-1; }
+        .hud-timer.warn { background:rgba(180,20,10,0.9); color:#fff; border-color:rgba(231,76,60,0.6);
+            animation:timerPulse 0.5s infinite; text-shadow:0 0 8px rgba(255,100,80,0.5); }
+        @keyframes timerPulse { 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.06);} }
+
+        .terr-labels { display:flex; justify-content:space-between; width:100%; padding:0 2px; }
+        .terr-labels span { font-size:0.6rem; font-weight:800; color:rgba(232,224,208,0.7);
+            text-shadow:0 1px 2px rgba(0,0,0,0.5); }
+
+        /* === INK BAR (10 pure-shape segments, no images) === */
+        :root { --ink-r:4px; }
+        #ink-wrap { position:absolute; top:var(--ink-top,78%);
+            left:var(--board-left,14px); right:var(--board-right,14px); z-index:102;
+            background:none; border:none; border-radius:0; }
+        #ink-bar { display:flex; gap:3px; position:relative; align-items:center; }
+        .ink-seg { flex:1; height:22px; border-radius:var(--ink-r); position:relative;
+            background:linear-gradient(180deg,#162530 0%,#0c1618 100%);
+            border:1px solid rgba(60,140,180,0.15);
+            box-shadow:inset 0 1px 0 rgba(80,180,255,0.08);
+            transition:box-shadow 0.2s, background 0.2s; overflow:hidden; }
+        .ink-seg-fill { position:absolute; top:0; left:0; bottom:0; width:0%;
+            background:linear-gradient(180deg,#5EEEAD 0%,#30C87A 40%,#20A060 100%);
+            border-radius:var(--ink-r); transition:width 0.08s linear; }
+        .ink-seg-fill::after { content:''; position:absolute; top:2px; left:10%; right:10%; height:3px;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.35) 40%,rgba(255,255,255,0.45) 50%,rgba(255,255,255,0.35) 60%,transparent);
+            border-radius:2px; }
+        .ink-seg.full { background:linear-gradient(180deg,#1a4035 0%,#0e2820 100%);
+            border-color:rgba(80,220,150,0.25);
+            box-shadow:0 0 6px rgba(80,255,160,0.25), 0 0 12px rgba(50,200,120,0.1),
+            inset 0 1px 0 rgba(150,255,200,0.15); }
+        .ink-seg.full .ink-seg-fill { width:100%; }
+        .ink-seg.charging .ink-seg-fill { opacity:0.7; }
+        #ink-particles { position:absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events:none; z-index:106; display:none; }
+
+        @keyframes goldPulse {
+            0%,100% { filter:drop-shadow(0 0 8px rgba(255,215,0,0.4)) drop-shadow(0 0 16px rgba(255,180,0,0.2)); }
+            50% { filter:drop-shadow(0 0 14px rgba(255,215,0,0.6)) drop-shadow(0 0 28px rgba(255,180,0,0.3)); }
+        }
+        #ink-wrap.ink-gold { animation:goldPulse 0.8s ease-in-out infinite; }
+        #ink-wrap.ink-gold .ink-seg.full { background:linear-gradient(180deg,#4a3520 0%,#2e1e10 100%);
+            border-color:rgba(255,200,80,0.3);
+            box-shadow:0 0 8px rgba(255,215,0,0.4), 0 0 16px rgba(255,180,0,0.2); }
+        #ink-wrap.ink-gold .ink-seg.full .ink-seg-fill {
+            background:linear-gradient(180deg,#FFE44D 0%,#FFB800 40%,#E89800 100%); }
+        #ink-wrap.ink-gold #ink-particles { display:block; }
+
+        @keyframes inkShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+        #ink-wrap.ink-empty { animation:inkShake 0.35s; }
+        #ink-wrap.ink-empty .ink-seg { background:linear-gradient(180deg,#3a1010 0%,#200808 100%)!important;
+            border-color:rgba(255,60,60,0.25)!important;
+            box-shadow:0 0 6px rgba(255,50,50,0.2)!important; }
+        #ink-wrap.ink-empty .ink-seg-fill { background:linear-gradient(180deg,#FF4040,#CC1010,#990000)!important; }
+
+        /* === RED ALARM OVERLAY (last 10s) === */
+        #alarm-overlay { position:absolute; top:0; left:0; width:100%; height:100%;
+            z-index:97; pointer-events:none; display:none; }
+        #alarm-overlay.active { display:block; }
+        #alarm-overlay .alarm-vignette {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background:radial-gradient(ellipse at center, transparent 40%, rgba(200,0,0,var(--alarm-i,0.08)) 100%);
+            animation:alarmPulse var(--alarm-speed,1.2s) ease-in-out infinite; }
+        @keyframes alarmPulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+
+        /* Fire particles */
+        .fire-particle { position:absolute; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity:0; animation:fireRise 0.8s ease-out infinite; filter:blur(1px); pointer-events:none; z-index:98; }
+        @keyframes fireRise {
+            0% { transform:translateY(0) scale(1); opacity:0.9; }
+            50% { opacity:0.6; }
+            100% { transform:translateY(-25px) scale(0.2); opacity:0; }
+        }
+
+        /* === GAME OVER === */
+        #gameover { gap:14px; animation:fadeInUp 0.5s ease-out; }
+        @keyframes fadeInUp { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
+        #gameover .result-card { background:rgba(8,6,24,0.92); border:2px solid rgba(80,180,255,0.3);
+            border-radius:12px; padding:24px 32px; text-align:center;
+            box-shadow:0 0 30px rgba(46,156,255,0.15),0 0 60px rgba(100,80,200,0.1);
+            backdrop-filter:blur(8px); }
+        #gameover .result-title { font-size:clamp(1.5rem,5vw,2rem); font-weight:900; }
         #gameover .result-scores { margin-top:12px; }
         #gameover .score-row { display:flex; align-items:center; gap:10px; padding:6px 0; font-size:1rem; }
-        #gameover .score-row .s-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:0.8rem; }
-        #gameover .score-row .s-name { font-weight:600; flex:1; color:#333; }
-        #gameover .score-row .s-pct { font-weight:700; color:#555; }
+        #gameover .score-row .s-avatar { width:28px; height:28px; border-radius:8px; display:flex; align-items:center;
+            justify-content:center; color:#fff; font-weight:700; font-size:0.8rem; }
+        #gameover .score-row .s-name { font-weight:600; flex:1; color:#E8E0D0; }
+        #gameover .score-row .s-pct { font-weight:700; color:#80D0FF; }
         #gameover .btn-group { display:flex; gap:10px; margin-top:4px; }
 
-        /* Connection status */
-        #conn-status { position:absolute; top:4px; left:50%; transform:translateX(-50%); font-size:0.65rem; color:rgba(0,0,0,0.4); z-index:200; }
-        #conn-status.error { color:#D32F2F; font-weight:600; }
-        #conn-status.connected { color:#388E3C; }
+        #screen-flash { position:absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events:none; opacity:0; z-index:99; transition:opacity 0.15s; }
+        #conn-status { position:absolute; top:4px; left:50%; transform:translateX(-50%);
+            font-size:0.65rem; color:rgba(80,180,255,0.3); z-index:200; }
+        #conn-status.error { color:#E74C3C; font-weight:600; }
+        #conn-status.connected { color:#66BB6A; }
     </style>
 </head>
 <body>
-    <div class="cloud cloud-1"></div>
-    <div class="cloud cloud-2"></div>
+    <canvas id="galaxy-canvas"></canvas>
+    <div class="starfield" id="starfield"></div>
 
 <div id="gc">
+    <div id="screen-flash"></div>
+    <div id="alarm-overlay"><div class="alarm-vignette"></div></div>
     <div id="ui">
-        <!-- Main Menu -->
         <div id="menu" class="screen active">
-            <div class="game-title">WALL WARS</div>
-            <div class="game-sub">Draw walls &middot; Claim territory &middot; 1v1</div>
-            <div class="game-ver">v1.3.0</div>
+            <div class="game-title">CRYSTAL<br>BATTLE</div>
+            <div class="game-ver">v3.6</div>
             <div class="btn-group">
-                <button class="btn btn-green" id="btn-quick">Quick Play</button>
-                <button class="btn btn-blue" id="btn-solo">Solo Play</button>
-                <button class="btn btn-orange" id="btn-friends">Play with Friends</button>
+                <button class="btn" id="btn-quick">Quick Play</button>
+                <button class="btn" id="btn-solo">Solo Play</button>
+                <button class="btn" id="btn-friends">With Friends</button>
             </div>
         </div>
-
-        <!-- Matching -->
         <div id="matching" class="screen">
             <div class="spinner"></div>
-            <div style="color:#fff; font-size:1.2rem; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.2);">Finding opponent...</div>
+            <div style="color:#80D0FF;font-size:1.2rem;font-weight:700;text-shadow:0 0 8px rgba(80,200,255,0.3);">Finding opponent...</div>
             <div id="match-timer">0s</div>
             <button class="btn btn-gray btn-small" id="btn-cancel-match">Cancel</button>
         </div>
-
-        <!-- Friends -->
         <div id="friends" class="screen">
-            <div style="color:#fff; font-size:1.1rem; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.2);">Play with Friends</div>
+            <div style="color:#80D0FF;font-size:1.1rem;font-weight:700;">With Friends</div>
             <input id="room-code-input" type="text" maxlength="4" placeholder="CODE" autocomplete="off" inputmode="text">
             <div class="btn-row">
-                <button class="btn btn-blue btn-small" id="btn-join">Join Room</button>
-                <button class="btn btn-orange btn-small" id="btn-create">Create Room</button>
+                <button class="btn btn-small" id="btn-join">Join</button>
+                <button class="btn btn-small" id="btn-create">Create</button>
             </div>
             <button class="btn btn-gray btn-small" id="btn-friends-back">Back</button>
         </div>
-
-        <!-- Lobby -->
         <div id="lobby" class="screen">
-            <div class="room-badge">
-                <div class="room-label">Room Code</div>
-                <div class="room-code" id="lobby-code">----</div>
-            </div>
+            <div class="room-badge"><div class="room-label">Room Code</div><div class="room-code" id="lobby-code">----</div></div>
             <div id="player-slots"></div>
-            <div id="lobby-status" style="color:#fff; font-size:0.85rem; opacity:0.8;">Waiting for opponent...</div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-green btn-small" id="start-btn" style="display:none">Start Game</button>
+            <div id="lobby-status" style="color:#E8E0D0;font-size:0.85rem;opacity:0.8;">Waiting for opponent...</div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn btn-small" id="start-btn" style="display:none">Start</button>
                 <button class="btn btn-gray btn-small" id="btn-leave">Cancel</button>
             </div>
         </div>
-
-        <!-- Countdown -->
-        <div id="countdown" class="screen">
-            <div class="count-num" id="count-num">3</div>
-        </div>
-
-        <!-- HUD (game layout per reference image 2) -->
+        <div id="countdown" class="screen"><div class="count-num" id="count-num">3</div></div>
+        <!-- HUD -->
         <div id="hud" class="screen">
-            <div class="hud-top">
-                <div class="hud-timer" id="hud-timer">01:00</div>
-                <div class="hud-opponent" id="hud-opponent">
-                    <div class="opp-info" id="opp-name">Opponent</div>
-                    <div class="opp-avatar" id="opp-avatar" style="background:#FF9800;">B</div>
-                </div>
-            </div>
-            <div class="hud-bottom">
-                <div class="hud-me">
-                    <div class="my-avatar" id="my-avatar" style="background:#2196F3;">Y</div>
-                    <div class="my-info">
-                        <div class="my-name" id="my-name">You</div>
-                        <div class="ink-bar"><div class="ink-fill" id="ink-fill" style="width:100%; background:#4CAF50;"></div></div>
+            <div class="hud-bar">
+                <div class="p-avatar" id="self-avatar" style="background:#2E9CFF;">Y</div>
+                <div class="rank-wrap"><div class="rank-inner">&#9733;</div></div>
+                <div class="hud-center">
+                    <div class="hud-names">
+                        <span class="p-name" id="self-name">You</span>
+                        <div class="hud-timer" id="hud-timer">01:00</div>
+                        <span class="p-name" id="opp-name">Bot</span>
                     </div>
+                    <div class="territory-bars">
+                        <div class="terr-bar terr-left"><div class="terr-fill" id="self-bar"></div></div>
+                        <div class="terr-bar terr-right"><div class="terr-fill" id="opp-bar"></div></div>
+                    </div>
+                    <div class="terr-labels" style="display:none;"><span id="self-pct">0%</span><span id="opp-pct">0%</span></div>
                 </div>
+                <div class="rank-wrap"><div class="rank-inner">&#9733;</div></div>
+                <div class="p-avatar" id="opp-avatar" style="background:#FF3B3B;">B</div>
             </div>
+            <div id="ink-wrap"><div id="ink-bar"></div><canvas id="ink-particles"></canvas></div>
         </div>
-
-        <!-- Game Over -->
         <div id="gameover" class="screen">
             <div class="result-card">
                 <div class="result-title" id="result-title">VICTORY!</div>
                 <div class="result-scores" id="result-scores"></div>
             </div>
             <div class="btn-group">
-                <button class="btn btn-green btn-small" id="retry-btn">Play Again</button>
+                <button class="btn btn-small" id="retry-btn">Play Again</button>
                 <button class="btn btn-gray btn-small" id="btn-menu">Menu</button>
             </div>
         </div>
     </div>
-
     <div id="conn-status"></div>
 </div>
 
@@ -205,276 +343,731 @@
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
 <script type="module">
+console.log('%c[Crystal Battle v3.6 — all-enemy region enclosure]', 'color:#0f0;font-size:14px;font-weight:bold');
 import * as THREE from 'three';
 
-// ═══════════════════════════════════════════════════════════
-// STEP 10.0 — Analytics IIFE
-// ═══════════════════════════════════════════════════════════
+// ─── ANALYTICS (STEP 10.0 auto-injected) ──────────────────
 const Analytics = (() => {
-    const ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5s20juL7xT-8G7gJfSfXwGJSh7-UULfINI5AliWWMvyRmbrogGjfMxoKOSws74Y36/exec';
     const GAME_ID = 'prototype008-wallwars';
-    const VERSION = '1.3';
-    let uid = localStorage.getItem('_ana_uid');
-    const isReturning = !!uid;
-    if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('_ana_uid', uid); }
-    let visitCount = parseInt(localStorage.getItem('_ana_visits') || '0') + 1;
-    localStorage.setItem('_ana_visits', visitCount);
-    let firstVisit = localStorage.getItem('_ana_first');
-    if (!firstVisit) { firstVisit = new Date().toISOString().slice(0, 10); localStorage.setItem('_ana_first', firstVisit); }
-    const daysSinceFirst = Math.floor((Date.now() - new Date(firstVisit).getTime()) / 86400000);
-    const sessionId = crypto.randomUUID().slice(0, 8);
-    const sessionStartTime = Date.now();
-    let gameCount = 0, gameStartTime = 0, totalPlayTime = 0;
-    function send(eventName, data = {}) {
-        const payload = { uid, sessionId, gameId: GAME_ID, v: VERSION, event: eventName, ts: new Date().toISOString(), sessionSec: Math.round((Date.now() - sessionStartTime) / 1000), ...data };
-        try { navigator.sendBeacon(ENDPOINT, JSON.stringify(payload)); } catch (e) {}
+    const VERSION = '3.6';
+    const ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5s20juL7xT-8G7gJfSfXwGJSh7-UULfINI5AliWWMvyRmbrogGjfMxoKOSws74Y36/exec';
+    let _uid = localStorage.getItem('_a_uid');
+    if (!_uid) { _uid = crypto.randomUUID?.() || Math.random().toString(36).slice(2); localStorage.setItem('_a_uid', _uid); }
+    const _firstVisit = localStorage.getItem('_a_first') || new Date().toISOString().slice(0,10);
+    if (!localStorage.getItem('_a_first')) localStorage.setItem('_a_first', _firstVisit);
+    let _visitNum = parseInt(localStorage.getItem('_a_vn') || '0') + 1;
+    localStorage.setItem('_a_vn', _visitNum);
+    const _daysSince = Math.floor((Date.now() - new Date(_firstVisit).getTime()) / 86400000);
+    let _gameNum = 0, _totalPlayTime = 0, _sessionStart = Date.now();
+    function send(event, data = {}) {
+        if (!ENDPOINT) return;
+        const payload = { gameId: GAME_ID, version: VERSION, uid: _uid, event, ts: new Date().toISOString(),
+            sessionSec: Math.round((Date.now() - _sessionStart) / 1000), ...data };
+        try { navigator.sendBeacon(ENDPOINT, JSON.stringify(payload)); } catch {}
     }
     return {
-        sessionStart() { send('session_start', { referrer: document.referrer || 'direct', screen: `${screen.width}x${screen.height}`, touch: 'ontouchstart' in window, lang: navigator.language, returning: isReturning, visitNum: visitCount, firstVisit, daysSinceFirst }); },
-        gameStart() { gameCount++; gameStartTime = Date.now(); send('game_start', { gameNum: gameCount }); },
-        gameOver(data = {}) { const playTimeSec = Math.round((Date.now() - gameStartTime) / 1000); totalPlayTime += playTimeSec; send('game_over', { gameNum: gameCount, playTimeSec, totalPlayTimeSec: totalPlayTime, ...data }); },
-        retry() { send('retry', { gameNum: gameCount, totalPlayTimeSec: totalPlayTime }); },
-        event(name, data = {}) { send(name, data); }
+        sessionStart: () => send('session_start', { returning: _visitNum > 1, visitNum: _visitNum,
+            firstVisit: _firstVisit, daysSinceFirst: _daysSince,
+            referrer: document.referrer || 'direct',
+            screen: `${screen.width}x${screen.height}`, touch: 'ontouchstart' in window, lang: navigator.language }),
+        gameStart: () => { _gameNum++; send('game_start', { gameNum: _gameNum }); },
+        gameOver: (data = {}) => send('game_over', { gameNum: _gameNum, totalPlayTimeSec: Math.round(_totalPlayTime), ...data }),
+        retry: () => send('retry', { gameNum: _gameNum, totalPlayTimeSec: Math.round(_totalPlayTime) }),
+        event: (name, data = {}) => send(name, data),
+        addPlayTime: (sec) => { _totalPlayTime += sec; },
+        getGameNum: () => _gameNum,
     };
 })();
+Analytics.sessionStart();
 
-// ═══════════════════════════════════════════════════════════
-// STEP 10.0 — Ads IIFE
-// ═══════════════════════════════════════════════════════════
+// ─── ADS (STEP 10.0 auto-injected, no-op until ADSENSE_ID set) ─
 const Ads = (() => {
     const ADSENSE_ID = '';
     const ENABLED = ADSENSE_ID && !location.hostname.includes('github.io');
     let adBreakFn = (o) => { if (o.adBreakDone) o.adBreakDone({ breakStatus: 'notReady' }); else if (o.afterAd) o.afterAd(); };
     let adConfigFn = (o) => {};
     if (ENABLED) {
-        const s = document.createElement('script'); s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`; s.crossOrigin = 'anonymous'; s.async = true; document.head.appendChild(s);
-        window.adsbygoogle = window.adsbygoogle || []; adBreakFn = adConfigFn = function(o) { adsbygoogle.push(o); };
+        const s = document.createElement('script');
+        s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`;
+        s.crossOrigin = 'anonymous'; s.async = true; document.head.appendChild(s);
+        window.adsbygoogle = window.adsbygoogle || [];
+        adBreakFn = adConfigFn = function(o) { adsbygoogle.push(o); };
     }
     return {
         config: () => adConfigFn({ preloadAdBreaks: 'on', sound: 'on' }),
-        showInterstitial: (onComplete) => adBreakFn({ type: 'next', name: 'between-games', beforeAd: () => {}, afterAd: () => {}, adBreakDone: (info) => { if (onComplete) onComplete(); } }),
+        showInterstitial: (onComplete) => adBreakFn({
+            type: 'next', name: 'between-games',
+            beforeAd: () => {}, afterAd: () => {},
+            adBreakDone: (info) => { if (onComplete) onComplete(); },
+        }),
         isEnabled: () => ENABLED,
     };
 })();
+Ads.config();
 
-// ═══════════════════════════════════════════════════════════
-// STEP 10.0 — CTA IIFE
-// ═══════════════════════════════════════════════════════════
+// ─── CTA (STEP 10.0 auto-injected, no-op until LINKS set) ──
 const CTA = (() => {
     const LINKS = { email: '', discord: '', twitter: '' };
     const SHOW_AFTER_GAMES = 3;
-    let gameCount = 0, ctaDismissed = false;
-    function createCTABanner() {
-        const activeLinks = Object.entries(LINKS).filter(([k, v]) => v);
-        if (!activeLinks.length || ctaDismissed) return null;
-        const banner = document.createElement('div'); banner.id = 'cta-banner';
-        banner.style.cssText = 'position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:200;display:flex;gap:8px;align-items:center;';
-        banner.innerHTML = '<span>More games soon</span>' + activeLinks.map(([type, url]) => { const labels = { email:'Subscribe', discord:'Join Discord', twitter:'Follow' }; return `<a href="${url}" target="_blank" rel="noopener" style="background:#4f46e5;color:#fff;padding:4px 10px;border-radius:6px;text-decoration:none;font-size:12px" onclick="CTA.track('${type}')">${labels[type]}</a>`; }).join('') + '<span style="cursor:pointer;margin-left:4px;opacity:0.6" onclick="CTA.dismiss()">✕</span>';
-        return banner;
+    let gameCount = 0, ctaDismissed = sessionStorage.getItem('_cta_dismissed') === '1';
+    function createBanner() {
+        const active = Object.entries(LINKS).filter(([k, v]) => v);
+        if (!active.length || ctaDismissed) return null;
+        const b = document.createElement('div'); b.id = 'cta-banner';
+        b.style.cssText = 'position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:200;display:flex;gap:8px;align-items:center;';
+        const labels = { email:'Subscribe', discord:'Join Discord', twitter:'Follow' };
+        b.innerHTML = `<span>More games coming soon</span>${active.map(([t,u])=>`<a href="${u}" target="_blank" rel="noopener" style="background:#4f46e5;color:#fff;padding:4px 10px;border-radius:6px;text-decoration:none;font-size:12px;white-space:nowrap" onclick="CTA.track('${t}')">${labels[t]}</a>`).join('')}<span style="cursor:pointer;margin-left:4px;opacity:0.6" onclick="CTA.dismiss()">✕</span>`;
+        return b;
     }
     return {
-        onGameOver: (container) => { gameCount++; if (gameCount < SHOW_AFTER_GAMES || ctaDismissed) return; const existing = document.getElementById('cta-banner'); if (existing) existing.remove(); const banner = createCTABanner(); if (banner) container.appendChild(banner); },
-        dismiss: () => { ctaDismissed = true; const el = document.getElementById('cta-banner'); if (el) el.remove(); },
-        track: (type) => { if (typeof Analytics !== 'undefined' && Analytics.event) Analytics.event('cta_click', { type }); },
+        onGameOver: (container) => { gameCount++; if (gameCount < SHOW_AFTER_GAMES || ctaDismissed) return;
+            const ex = document.getElementById('cta-banner'); if (ex) ex.remove();
+            const b = createBanner(); if (b) container.appendChild(b); },
+        dismiss: () => { ctaDismissed = true; const el = document.getElementById('cta-banner'); if (el) el.remove(); sessionStorage.setItem('_cta_dismissed', '1'); },
+        track: (type) => { Analytics.event('cta_click', { type }); },
     };
 })();
-window.CTA = CTA;
+window.CTA = CTA; // expose for onclick in banner
 
-Analytics.sessionStart();
-Ads.config();
-
-// ─── CONFIG ───────────────────────────────────────────────
+// ─── CONFIG ────────────────────────────────────────────────
 const CONFIG = {
     serverUrl: 'https://prototype-multiplayer.ariescar0326.workers.dev',
-    bgColor: 0x87CEEB,
-    neutralColor: 0xE8E0D0,
-    gridLineColor: 0xCCC4B4,
+    bgColor: 0x080618,
+    boardColor: 0x12102A,
+    borderColor: 0x3A3565,
+    neutralColor: 0xB8B0C8,
     gridSize: 10,
     cellSize: 1.0,
     maxInk: 50,
     inkPerWall: 5,
     inkRegen: 4,
     gameTime: 60,
-    aiSpeed: 0.8,
-    aiWallInterval: 1.2,
-    quickPlayAutoStart: 15,  // seconds before auto-starting with AI
+    quickPlayAutoStart: 15,
+    startInk: 25,
+    ultimateBonus: 4,
+    // AI tuning
+    aiRegenMultLast10s: 3,  // AI ink regen multiplier in last 10 seconds
+    aiExploreTime: [1.5, 2.5],  // [min, variance] seconds before AI switches from explore
+    aiBuildTime: [2, 2],   // [min, variance] seconds before AI switches from build
+    aiRushBurst: [3, 5],   // [min, variance] extra wall placements in rush phase
+    aiRushChanceFromExplore: 0.45,
+    aiRushChanceFromBuild: 0.3,
 };
+const INK_SEGS = CONFIG.maxInk / CONFIG.inkPerWall;
+// Blue vs Red (Clash Royale)
+const P_COLORS_HEX  = [0x3399FF, 0xFF2222];
+const P_COLORS_CSS  = ['#2E9CFF', '#FF3B3B'];
+const P_COLORS_LIGHT = [0x88DDFF, 0xFF6666];
+const P_COLORS_DARK  = [0x1870CC, 0xDD1818];
 
-// 2 players: blue (#2196F3) and orange (#FF9800) — matches cute style
-const P_COLORS_HEX = [0x2196F3, 0xFF9800];
-const P_COLORS_CSS = ['#2196F3', '#FF9800'];
-const P_COLORS_LIGHT = [0x90CAF9, 0xFFCC80]; // lighter for territory fill
-const P_LABELS = ['You', 'Opponent'];
-
-// ─── State ────────────────────────────────────────────────
+// ─── STATE ─────────────────────────────────────────────────
 const GS = { MENU:'menu', MATCHING:'matching', FRIENDS:'friends', LOBBY:'lobby', COUNTDOWN:'countdown', PLAYING:'playing', GAMEOVER:'gameover' };
-
 const state = {
-    current: GS.MENU,
-    mode: 'solo',
-    ink: CONFIG.maxInk,
-    timer: CONFIG.gameTime,
-    ws: null,
-    myPlayerId: null,
-    myColorIndex: 0,
-    isHost: false,
-    roomCode: '',
-    players: [],
-    scores: {},
-    reconnecting: false,
-    matchTimer: 0,
-    matchInterval: null,
+    current: GS.MENU, mode:'solo', ink: CONFIG.startInk, timer: CONFIG.gameTime,
+    ws:null, myPlayerId:null, myColorIndex:0, isHost:false, roomCode:'',
+    players:[], scores:{}, reconnecting:false, matchTimer:0, matchInterval:null,
+    ultimateActive:false, ultimateBonusGranted:false,
+    alarmActive:false,
 };
 
-// ─── Three.js Setup ───────────────────────────────────────
+// ─── THREE.JS SETUP ────────────────────────────────────────
 const gc = document.getElementById('gc');
 const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.setSize(gc.clientWidth, gc.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setClearColor(CONFIG.bgColor, 0);  // transparent so CSS gradient shows through on menu
+renderer.setClearColor(CONFIG.bgColor, 0);
 renderer.domElement.style.pointerEvents = 'auto';
 renderer.domElement.style.touchAction = 'none';
 gc.insertBefore(renderer.domElement, gc.firstChild);
 
 const scene = new THREE.Scene();
-const gs = CONFIG.gridSize * CONFIG.cellSize;
-let aspect = gc.clientWidth / gc.clientHeight;
-const camH = gs * 1.4;
+const gridTotal = CONFIG.gridSize * CONFIG.cellSize;
+let aspect, camH;
+function calcCam() {
+    const w = gc.clientWidth, h = gc.clientHeight;
+    aspect = w / h;
+    const padded = gridTotal * 1.15;
+    camH = Math.max(gridTotal * 1.5, padded / aspect);
+}
+calcCam();
 const camera = new THREE.OrthographicCamera(-camH*aspect/2, camH*aspect/2, camH/2, -camH/2, 0.1, 50);
 camera.position.z = 10;
 scene.add(new THREE.AmbientLight(0xffffff, 1.0));
 
-// Board background
-const boardBg = new THREE.Mesh(
-    new THREE.PlaneGeometry(gs + 0.4, gs + 0.4),
-    new THREE.MeshBasicMaterial({ color: 0xD4C8A8 })
-);
-boardBg.position.z = -0.02;
-scene.add(boardBg);
-
-// Grid border
-const borderGeo = new THREE.PlaneGeometry(gs + 0.6, gs + 0.6);
-const borderMat = new THREE.MeshBasicMaterial({ color: 0x8B7D6B });
-const borderMesh = new THREE.Mesh(borderGeo, borderMat);
-borderMesh.position.z = -0.03;
-scene.add(borderMesh);
-
-// ─── Audio ────────────────────────────────────────────────
-const actx = new (window.AudioContext || window.webkitAudioContext)();
-document.addEventListener('touchstart', () => actx.resume(), { once:true });
-document.addEventListener('mousedown', () => actx.resume(), { once:true });
-function tone(f,d=0.08,t='sine',v=0.12) {
-    const o=actx.createOscillator(),g=actx.createGain();
-    o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,actx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);
-    o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+d);
+// ─── ROUNDED RECT GEOMETRY (3D bevel) ──────────────────────
+function makeRR(w, h, r) {
+    const s = new THREE.Shape();
+    s.moveTo(-w/2+r, -h/2); s.lineTo(w/2-r, -h/2);
+    s.quadraticCurveTo(w/2, -h/2, w/2, -h/2+r); s.lineTo(w/2, h/2-r);
+    s.quadraticCurveTo(w/2, h/2, w/2-r, h/2); s.lineTo(-w/2+r, h/2);
+    s.quadraticCurveTo(-w/2, h/2, -w/2, h/2-r); s.lineTo(-w/2, -h/2+r);
+    s.quadraticCurveTo(-w/2, -h/2, -w/2+r, -h/2);
+    return new THREE.ShapeGeometry(s);
 }
-const sfx = {
-    wall: () => tone(600, 0.04, 'sine', 0.08),
-    claim: () => tone(800, 0.06, 'sine', 0.1),
-    win: () => { tone(523,0.12); setTimeout(()=>tone(659,0.12),100); setTimeout(()=>tone(784,0.15),200); },
-    lose: () => tone(200, 0.3, 'sawtooth', 0.15),
-    countdown: () => tone(440, 0.1, 'sine', 0.15),
-    go: () => tone(880, 0.2, 'sine', 0.2),
+let cellGeo   = makeRR(0.86, 0.86, 0.05);
+// shadow removed
+
+function darkenHex(hex, f=0.6) {
+    return (Math.round(((hex>>16)&0xff)*f)<<16)|(Math.round(((hex>>8)&0xff)*f)<<8)|Math.round((hex&0xff)*f);
+}
+
+// ─── CRYSTAL TUNING PARAMS (simplified — texture-based) ──
+const CTP = {
+    crystalSize: 1.0,      // crystal mesh scale
+    timerW: 250,           // timer crystal06 image width
+    timerH: 100,           // timer crystal06 image height
+    timerPadY: -6,         // timer image Y offset
+    btnW: 210,             // menu button crystal04 width
+    btnH: 136,             // menu button crystal04 height
+    energyH: 22,           // energy bar segment height
+    energyGap: 3,          // gap between energy segments
+    energyRadius: 4,       // energy segment border-radius
 };
+
+// ─── BACKGROUND TUNING PARAMS ───────────────────────────────
+const BGP = {
+    starCount: 200,        // number of stars
+    starSpeed: 3.0,        // star drift speed multiplier
+    starOpacity: 1.0,      // star max opacity
+    starSize: 4.0,         // star size multiplier
+    galaxyOpacity: 0.12,   // galaxy nebula opacity
+    galaxySpeed: 0.003,    // galaxy flow speed
+};
+
+const allCrystalMats = []; // track for live update
+
+// Load crystal texture
+const crystalTexLoader = new THREE.TextureLoader();
+// Use WebP from ui/ (3.5KB vs 68KB PNG in root)
+const crystalTex = crystalTexLoader.load('ui/crystal01.webp');
+crystalTex.minFilter = THREE.LinearFilter;
+crystalTex.magFilter = THREE.LinearFilter;
+
+// Texture-based crystal material: samples crystal01.png and tints by baseColor
+function makeCrystalMat(hex) {
+    const mat = new THREE.ShaderMaterial({
+        uniforms: {
+            baseColor: { value: new THREE.Color(hex) },
+            tex: { value: crystalTex },
+        },
+        vertexShader: `varying vec2 vUV;
+            void main(){ vUV=position.xy/0.43*0.5+0.5; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+        fragmentShader: `uniform vec3 baseColor; uniform sampler2D tex; varying vec2 vUV;
+            void main(){
+                vec2 uv=clamp(vUV,0.0,1.0);
+                vec4 t=texture2D(tex,uv);
+                // Extract luminance from texture
+                float lum=dot(t.rgb,vec3(0.299,0.587,0.114));
+                // Tint: use baseColor for hue, texture for light/dark structure
+                // Bright areas (lum>0.5) blend toward white, dark areas blend toward dark baseColor
+                vec3 col=baseColor*lum*1.8;
+                // Preserve white highlights from texture
+                float hiMask=smoothstep(0.6,0.95,lum);
+                col=mix(col,vec3(lum)*1.2,hiMask*0.7);
+                gl_FragColor=vec4(col,t.a);
+            }`,
+        transparent: true,
+    });
+    mat.color = mat.uniforms.baseColor.value;
+    allCrystalMats.push(mat);
+    return mat;
+}
+
+function rebuildAllCrystalShaders() {
+    // No-op now — texture-based, no shader rebuild needed
+}
+
+// Rebuild cell + shadow geometry when size changes
+let _prevCellGeoKey = '';
+function rebuildCellGeometry() {
+    const sz = 0.86 * CTP.crystalSize;
+    const key = sz.toFixed(3);
+    if (key === _prevCellGeoKey) return;
+    _prevCellGeoKey = key;
+    const newCellGeo = makeRR(sz, sz, 0.05);
+    if (typeof cellMeshes !== 'undefined') {
+        cellMeshes.flat().forEach(m => { if(m) m.geometry = newCellGeo; });
+    }
+}
+function updateShadowBlocks() {} // no-op
+
+// Crystal geometries for decorations & particles
+const crystalGeo = new THREE.OctahedronGeometry(1, 0);
+const crystalShardGeo = new THREE.TetrahedronGeometry(1, 0);
+
+// Board removed — crystals float on void
+
+// ─── 3D AVATAR CRYSTALS (realtime light: bright/dark faces) ─
+const avatarCrystals = {};
+function createAvatarCrystal(id, color, lightColor) {
+    const avatarGeo = new THREE.IcosahedronGeometry(1, 0);
+    // Custom shader: fake directional light per-face for bright/dark sides
+    const cVec = new THREE.Color(color);
+    const lcVec = new THREE.Color(lightColor);
+    const mat = new THREE.ShaderMaterial({
+        uniforms: { baseColor:{value:cVec}, lightColor:{value:lcVec}, lightDir:{value:new THREE.Vector3(-0.4,0.6,0.8).normalize()} },
+        vertexShader: `varying vec3 vNormal; varying vec3 vWorldPos;
+            void main(){
+                vNormal=normalize(normalMatrix*normal);
+                vWorldPos=(modelMatrix*vec4(position,1.0)).xyz;
+                gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+            }`,
+        fragmentShader: `uniform vec3 baseColor; uniform vec3 lightColor; uniform vec3 lightDir;
+            varying vec3 vNormal; varying vec3 vWorldPos;
+            void main(){
+                vec3 n=normalize(vNormal);
+                // Strong directional light
+                float diff=max(dot(n,lightDir),0.0);
+                float ambient=0.12;
+                // Large bright specular (Blinn-Phong, wide lobe)
+                vec3 viewDir=normalize(vec3(0.0,0.0,1.0)-vWorldPos);
+                vec3 halfDir=normalize(lightDir+viewDir);
+                float spec=pow(max(dot(n,halfDir),0.0),16.0);
+                // Fresnel rim — strong
+                float fresnel=pow(1.0-max(dot(n,vec3(0.0,0.0,1.0)),0.0),2.0);
+                // High contrast: dark shadow side, bright lit side
+                vec3 col=baseColor*(ambient+diff*1.0)+vec3(1.0)*spec*0.8+lightColor*fresnel*0.45;
+                gl_FragColor=vec4(col,1.0);
+            }`,
+    });
+    mat.color = cVec;
+    const mesh = new THREE.Mesh(avatarGeo, mat);
+    mesh.scale.set(0.35, 0.50, 0.35);
+    mesh.visible = false;
+    scene.add(mesh);
+    // Glow halo
+    const glowMat = new THREE.MeshBasicMaterial({ color: lightColor, transparent:true, opacity:0.2 });
+    const glow = new THREE.Mesh(avatarGeo, glowMat);
+    glow.scale.set(0.52, 0.70, 0.52);
+    glow.visible = false;
+    scene.add(glow);
+    avatarCrystals[id] = { mesh, glow, mat, glowMat, color, lightColor, bob:0, shattered:false };
+}
+createAvatarCrystal('self-avatar', 0x3399FF, 0x88DDFF);
+createAvatarCrystal('opp-avatar', 0xFF2222, 0xFF6666);
+
+function syncAvatarCrystalPos(id) {
+    const c = avatarCrystals[id]; if (!c || c.shattered) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const gcRect = gc.getBoundingClientRect();
+    const nx = ((rect.left+rect.width/2-gcRect.left)/gcRect.width)*2-1;
+    const ny = -((rect.top+rect.height/2-gcRect.top)/gcRect.height)*2+1;
+    const wx = nx*camH*aspect/2;
+    const wy = ny*camH/2;
+    c.mesh.position.set(wx, wy, 0.5);
+    c.glow.position.set(wx, wy, 0.45);
+}
+function updateAvatarCrystals(dt) {
+    for (const id of ['self-avatar','opp-avatar']) {
+        const c = avatarCrystals[id]; if (!c || !c.mesh.visible || c.shattered) continue;
+        c.bob += dt;
+        c.mesh.rotation.y += 0.8 * dt;
+        c.glow.rotation.y = c.mesh.rotation.y;
+        // Float bob
+        const baseY = c.mesh.position.y;
+        syncAvatarCrystalPos(id);
+        c.mesh.position.y += Math.sin(c.bob * 2.0) * 0.08;
+        c.glow.position.y = c.mesh.position.y;
+    }
+}
+function setAvatarCrystalsVisible(vis) {
+    for (const id of ['self-avatar','opp-avatar']) {
+        const c = avatarCrystals[id]; if (!c) continue;
+        c.mesh.visible = vis && !c.shattered;
+        c.glow.visible = vis && !c.shattered;
+    }
+}
+function resetAvatarCrystals() {
+    for (const id of ['self-avatar','opp-avatar']) {
+        const c = avatarCrystals[id]; if (!c) continue;
+        c.shattered = false; c.bob = 0;
+        c.mesh.visible = false; c.glow.visible = false;
+        c.mesh.scale.set(0.35, 0.50, 0.35);
+        c.mat.opacity = 1; c.glowMat.opacity = 0.15;
+    }
+}
+
+function shatterAvatarCrystal(avatarId) {
+    const c = avatarCrystals[avatarId]; if (!c) return;
+    c.shattered = true;
+    const pos = c.mesh.position.clone();
+    c.mesh.visible = false; c.glow.visible = false;
+    const el = document.getElementById(avatarId);
+    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; }
+
+    // === PLANET EXPLOSION STYLE ===
+    // 1) Shockwave ring (expands + fades)
+    const ringGeo = new THREE.RingGeometry(0.01, 0.08, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.9, side:THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.copy(pos); ring.position.z = 0.6;
+    scene.add(ring);
+    crystalParticles.push({ mesh:ring, mat:ringMat, life:0, maxLife:0.8,
+        baseScale:1, type:'shockwave', px:pos.x, py:pos.y });
+
+    // 2) Flash sphere (bright white burst)
+    const flashGeo = new THREE.CircleGeometry(0.1, 16);
+    const flashMat = new THREE.MeshBasicMaterial({ color:c.lightColor, transparent:true, opacity:1.0 });
+    const flash = new THREE.Mesh(flashGeo, flashMat);
+    flash.position.copy(pos); flash.position.z = 0.55;
+    scene.add(flash);
+    crystalParticles.push({ mesh:flash, mat:flashMat, life:0, maxLife:0.5,
+        baseScale:0.1, type:'flash' });
+
+    // 3) Crystal shards flying outward (one-time burst)
+    for (let i = 0; i < 10; i++) {
+        const sz = 0.06 + Math.random()*0.12;
+        const mt = new THREE.MeshBasicMaterial({ color: Math.random()>0.3?c.color:c.lightColor, transparent:true });
+        const ms = new THREE.Mesh(crystalShardGeo, mt);
+        ms.position.copy(pos);
+        ms.scale.setScalar(sz);
+        ms.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+        scene.add(ms);
+        const ang = Math.random()*Math.PI*2;
+        const spd = 3+Math.random()*5;
+        crystalParticles.push({ mesh:ms, mat:mt,
+            vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+            life:0, maxLife:0.8+Math.random()*0.4,
+            rs:{x:(Math.random()-0.5)*12,y:(Math.random()-0.5)*12,z:(Math.random()-0.5)*12},
+            baseScale:sz, type:'shatter' });
+    }
+}
+function resetAvatarStyle(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.transition = ''; el.style.transform = ''; el.style.opacity = '';
+}
+
+// ─── CRYSTAL PARTICLES (attack + shatter) ─────────────────
+const crystalParticles = [];
+
+function spawnCrystalAttack(cells, owner) {
+    const half = CONFIG.gridSize / 2;
+    const ccx = cells.reduce((s,c)=>s+c.x,0)/cells.length;
+    const ccy = cells.reduce((s,c)=>s+c.y,0)/cells.length;
+    const cx = (ccx-half+0.5)*CONFIG.cellSize;
+    const cy = (ccy-half+0.5)*CONFIG.cellSize;
+    const color = P_COLORS_HEX[owner-1];
+    const light = P_COLORS_LIGHT[owner-1];
+    const num = Math.min(cells.length * 2, 16);
+    for (let i = 0; i < num; i++) {
+        const ang = (i/num)*Math.PI*2 + Math.random()*0.4;
+        const dist = 3.5 + Math.random()*2;
+        const sx = cx + Math.cos(ang)*dist;
+        const sy = cy + Math.sin(ang)*dist;
+        const sz = 0.08 + Math.random()*0.12;
+        const mt = new THREE.MeshBasicMaterial({ color: Math.random()>0.4?color:light, transparent:true });
+        const ms = new THREE.Mesh(crystalShardGeo, mt);
+        ms.position.set(sx, sy, 0.3);
+        ms.scale.setScalar(sz);
+        ms.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+        scene.add(ms);
+        crystalParticles.push({ mesh:ms, mat:mt, sx, sy,
+            ex:cx+(Math.random()-0.5)*1.5, ey:cy+(Math.random()-0.5)*1.5,
+            life:0, maxLife:0.45+Math.random()*0.3,
+            rs:{x:(Math.random()-0.5)*10,y:(Math.random()-0.5)*10,z:(Math.random()-0.5)*10},
+            baseScale:sz, type:'attack' });
+    }
+}
+
+function clearCrystalParticles() {
+    crystalParticles.forEach(p => { scene.remove(p.mesh); p.mat.dispose(); });
+    crystalParticles.length = 0;
+}
+
+function updateCrystalParticles(dt) {
+    for (let i = crystalParticles.length - 1; i >= 0; i--) {
+        const p = crystalParticles[i];
+        p.life += dt;
+        const t = p.life / p.maxLife;
+        if (t >= 1) { scene.remove(p.mesh); p.mat.dispose(); crystalParticles.splice(i,1); continue; }
+        if (p.type === 'shockwave') {
+            // Expanding ring
+            const s = 0.5 + t * 8;
+            p.mesh.scale.set(s, s, 1);
+            p.mat.opacity = (1 - t) * 0.8;
+        } else if (p.type === 'flash') {
+            // Bright flash that expands then fades
+            const s = p.baseScale * (1 + t * 15);
+            p.mesh.scale.set(s, s, 1);
+            p.mat.opacity = t < 0.2 ? 1 : Math.max(0, 1 - (t-0.2)/0.8);
+        } else if (p.type === 'shatter') {
+            p.mesh.position.x += p.vx * dt;
+            p.mesh.position.y += p.vy * dt;
+            p.vy -= 4 * dt; // lighter gravity for space feel
+            if (p.rs) {
+                p.mesh.rotation.x += p.rs.x * dt;
+                p.mesh.rotation.y += p.rs.y * dt;
+                p.mesh.rotation.z += p.rs.z * dt;
+            }
+            p.mat.opacity = 1 - t * t;
+            p.mesh.scale.setScalar(p.baseScale * (1 - t * 0.5));
+        } else {
+            // attack type
+            const e = t * t;
+            p.mesh.position.x = p.sx + (p.ex - p.sx) * e;
+            p.mesh.position.y = p.sy + (p.ey - p.sy) * e;
+            if (p.rs) {
+                p.mesh.rotation.x += p.rs.x * dt;
+                p.mesh.rotation.y += p.rs.y * dt;
+                p.mesh.rotation.z += p.rs.z * dt;
+            }
+            p.mat.opacity = 1 - t * t;
+            p.mesh.scale.setScalar(p.baseScale * (1 - t * 0.4));
+        }
+    }
+}
+
+// ─── AUDIO ─────────────────────────────────────────────────
+const actx = new (window.AudioContext || window.webkitAudioContext)();
+// Master gain for all gameplay sounds — can be killed instantly at game end
+const masterGain = actx.createGain();
+masterGain.connect(actx.destination);
+function resumeAudio() { if(actx.state==='suspended') actx.resume(); }
+document.addEventListener('touchstart', resumeAudio, {once:true});
+document.addEventListener('mousedown', resumeAudio, {once:true});
+
+let _sfxMuted = false;
+function tone(f, d=0.08, type='sine', v=0.12) {
+    if (_sfxMuted) return;
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.connect(g).connect(masterGain); o.start(t); o.stop(t + d);
+}
+// Load all sound files
+const sndBuffers = {};
+const sndFiles = ['claim01.ogg','claim02.ogg','claim03.ogg','click01.ogg','click02.ogg',
+    'end_destroy.ogg','end_victory.ogg','energy_empty.ogg','energy_full.ogg'];
+sndFiles.forEach(f => {
+    fetch('sfx/'+f).then(r=>r.arrayBuffer()).then(buf=>actx.decodeAudioData(buf))
+        .then(decoded=>{ sndBuffers[f]=decoded; }).catch(()=>{});
+});
+function playSnd(name, vol=0.3) {
+    if (_sfxMuted) return;
+    const buf = sndBuffers[name]; if (!buf) return;
+    const src = actx.createBufferSource();
+    const g = actx.createGain();
+    src.buffer = buf; g.gain.value = vol;
+    src.connect(g).connect(masterGain); src.start();
+}
+// Play a sound BYPASSING master gain (for game-end sounds that must play after mute)
+function playSndDirect(name, vol=0.3) {
+    const buf = sndBuffers[name]; if (!buf) return;
+    const src = actx.createBufferSource();
+    const g = actx.createGain();
+    src.buffer = buf; g.gain.value = vol;
+    src.connect(g).connect(actx.destination); src.start();
+}
+// Kill ALL currently playing gameplay sounds instantly
+function muteAllGameplaySounds() {
+    _sfxMuted = true;
+    masterGain.gain.setValueAtTime(0, actx.currentTime); // instant silence
+}
+
+const sfx = {
+    wallPlace:  ()=> playSnd('click01.ogg', 0.2),
+    claimSmall: ()=> playSnd('claim01.ogg', 0.25),
+    claimMed:   ()=> playSnd('claim02.ogg', 0.25),
+    claimHuge:  ()=> playSnd('claim03.ogg', 0.3),
+    inkTick:    ()=>{ tone(1200,0.015,'sine',0.02); },
+    inkEmpty:   ()=> playSnd('energy_empty.ogg', 0.2),
+    inkFull:    ()=> playSnd('energy_full.ogg', 0.25),
+    timerWarn:  ()=>{ tone(350,0.04,'square',0.04); },
+    btnClick:   ()=> playSnd('click02.ogg', 0.2),
+    win:        ()=> playSnd('end_victory.ogg', 0.35),
+    lose:       ()=>{ tone(350,0.2,'sawtooth',0.1); setTimeout(()=>tone(250,0.25,'sawtooth',0.08),120); },
+    countdown:  ()=> tone(440,0.1,'sine',0.15),
+    go:         ()=> tone(880,0.2,'sine',0.2),
+    ultimate:   ()=>{ tone(1000,0.15,'sine',0.1); tone(1500,0.1,'sine',0.08); setTimeout(()=>tone(2000,0.12,'sine',0.06),80); },
+    destroy:    ()=> playSnd('end_destroy.ogg', 0.3),
+};
+
 function vibrate(p=[10]) { if(navigator.vibrate) navigator.vibrate(p); }
 
-// ─── Grid ─────────────────────────────────────────────────
+// ─── GRID ──────────────────────────────────────────────────
 const grid = [];
 const cellMeshes = [];
-const cellGeo = new THREE.PlaneGeometry(CONFIG.cellSize * 0.94, CONFIG.cellSize * 0.94);
-const roundedGeo = cellGeo; // keep simple for perf
+const cellShadows = []; // kept as empty for compat
+const wallCells = new Set();
+let prevGridState = null;
 
 function initGrid() {
     cellMeshes.flat().forEach(m => { scene.remove(m); m.material.dispose(); });
-    cellMeshes.length = 0;
-    grid.length = 0;
+    cellMeshes.length = 0; cellShadows.length = 0; grid.length = 0; cellAnims.length = 0;
+    wallCells.clear(); prevGridState = null;
     const half = CONFIG.gridSize / 2;
     for (let y = 0; y < CONFIG.gridSize; y++) {
-        grid[y] = [];
-        cellMeshes[y] = [];
+        grid[y] = []; cellMeshes[y] = []; cellShadows[y] = [];
         for (let x = 0; x < CONFIG.gridSize; x++) {
             grid[y][x] = 0;
-            const mat = new THREE.MeshBasicMaterial({ color: CONFIG.neutralColor });
-            const mesh = new THREE.Mesh(roundedGeo, mat);
-            mesh.position.set((x-half+0.5)*CONFIG.cellSize, (y-half+0.5)*CONFIG.cellSize, 0);
-            scene.add(mesh);
-            cellMeshes[y][x] = mesh;
+            const px = (x-half+0.5)*CONFIG.cellSize;
+            const py = (y-half+0.5)*CONFIG.cellSize;
+            cellShadows[y][x] = null; // no shadow
+            const mat = makeCrystalMat(CONFIG.neutralColor);
+            const mesh = new THREE.Mesh(cellGeo, mat);
+            mesh.position.set(px, py, 0);
+            scene.add(mesh); cellMeshes[y][x] = mesh;
         }
     }
 }
 
-function applyGridState(serverGrid) {
-    for (let y = 0; y < CONFIG.gridSize; y++) {
-        for (let x = 0; x < CONFIG.gridSize; x++) {
-            const owner = serverGrid[y][x];
-            grid[y][x] = owner;
-            let color = CONFIG.neutralColor;
-            if (owner > 0) color = P_COLORS_LIGHT[owner - 1] !== undefined ? P_COLORS_LIGHT[owner - 1] : 0xffffff;
-            cellMeshes[y][x].material.color.setHex(color);
+// ─── CELL ANIMATION SYSTEM ─────────────────────────────────
+const cellAnims = [];
+
+function addCellAnim(x, y, flashHex, endHex, duration, delay, scaleAmt) {
+    for (let i = cellAnims.length - 1; i >= 0; i--) {
+        if (cellAnims[i].x === x && cellAnims[i].y === y) cellAnims.splice(i, 1);
+    }
+    cellAnims.push({ x, y, fc:new THREE.Color(flashHex), ec:new THREE.Color(endHex),
+        dur:duration, del:delay, sa:scaleAmt, t:0 });
+}
+
+function updateCellAnims(dt) {
+    for (let i = cellAnims.length - 1; i >= 0; i--) {
+        const a = cellAnims[i];
+        a.t += dt;
+        if (a.t < a.del) continue;
+        const p = Math.min((a.t - a.del) / a.dur, 1);
+        const ease = 1 - (1-p)*(1-p);
+        const mesh = cellMeshes[a.y]?.[a.x];
+        if (!mesh) { cellAnims.splice(i, 1); continue; }
+        mesh.material.color.copy(a.fc).lerp(a.ec, ease);
+        const s = 1.0 + Math.sin(p * Math.PI) * a.sa;
+        mesh.scale.set(s, s, 1);
+        if (p >= 1) {
+            mesh.scale.set(1, 1, 1);
+            // shadow removed
+            cellAnims.splice(i, 1);
         }
     }
 }
 
-function setCellOwner(x, y, owner) {
-    if (x<0||x>=CONFIG.gridSize||y<0||y>=CONFIG.gridSize) return;
-    grid[y][x] = owner;
-    let color = CONFIG.neutralColor;
-    if (owner > 0) color = P_COLORS_LIGHT[owner - 1] !== undefined ? P_COLORS_LIGHT[owner - 1] : 0xffffff;
-    cellMeshes[y][x].material.color.setHex(color);
+function screenFlash(color, opacity) {
+    const el = document.getElementById('screen-flash');
+    el.style.background = color; el.style.opacity = opacity;
+    setTimeout(() => { el.style.opacity = 0; }, 120);
 }
 
-// ─── Solo AI ──────────────────────────────────────────────
-let aiTimer = 0, aiX, aiY, aiDirX, aiDirY;
-
-function resetAI() {
-    aiX = CONFIG.gridSize - 2; aiY = CONFIG.gridSize - 2;
-    aiDirX = Math.random() > 0.5 ? 1 : -1;
-    aiDirY = Math.random() > 0.5 ? 1 : -1;
+function screenShake(intensity=4, duration=300) {
+    const el = gc; const start = performance.now();
+    function shake() {
+        const t = performance.now() - start;
+        if (t > duration) { el.style.transform = ''; return; }
+        const decay = 1 - t/duration;
+        const ox = (Math.random()-0.5) * 2 * intensity * decay;
+        const oy = (Math.random()-0.5) * 2 * intensity * decay;
+        el.style.transform = `translate(${ox}px, ${oy}px)`;
+        requestAnimationFrame(shake);
+    }
+    requestAnimationFrame(shake);
 }
 
+// ─── TERRITORY LOGIC ──────────────────────────────────────
+// Hybrid approach:
+// 1) Flood fill from outside to find all enclosed cells
+// 2) Validate each enclosed region:
+//    a) Single cell with ALL 4 neighbors as owner walls → always claim
+//    b) Multi-cell: boundary walls must all be in the same 4-connected
+//       wall component → claim only if yes (prevents diagonal-gap boxes)
 function placeWallLocal(x, y, owner) {
     if (x<0||x>=CONFIG.gridSize||y<0||y>=CONFIG.gridSize) return false;
     if (grid[y][x] === owner) return false;
-    setCellOwner(x, y, owner);
-    floodClaimLocal(owner);
+    const N = CONFIG.gridSize;
+    grid[y][x] = owner;
+    wallCells.add(y * N + x);
+    cellMeshes[y][x].material.color.setHex(P_COLORS_HEX[owner-1]);
+    addCellAnim(x, y, P_COLORS_LIGHT[owner-1], P_COLORS_HEX[owner-1], 0.25, 0, 0.15);
+    checkEnclosureLocal(owner);
     return true;
 }
 
-function floodClaimLocal(owner) {
-    const sz = CONFIG.gridSize;
-    const visited = Array.from({length:sz}, ()=>new Array(sz).fill(false));
+function checkEnclosureLocal(owner) {
+    const N = CONFIG.gridSize;
+    const D4 = [[1,0],[-1,0],[0,1],[0,-1]];
+
+    // ── Step 1: Flood fill from virtual border (4-dir) ──
+    // ALL owner cells (walls + claimed territory) act as barriers
+    const V = N + 2;
+    const visited = Array.from({length:V}, () => new Uint8Array(V));
     const queue = [];
-    for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
-        if ((x===0||x===sz-1||y===0||y===sz-1) && grid[y][x]!==owner) {
-            visited[y][x]=true; queue.push([x,y]);
+    for (let vy = 0; vy < V; vy++) for (let vx = 0; vx < V; vx++) {
+        if (vx===0||vx===V-1||vy===0||vy===V-1) { visited[vy][vx]=1; queue.push(vx|(vy<<8)); }
+    }
+    let qi = 0;
+    while (qi < queue.length) {
+        const v = queue[qi++]; const cx = v&0xff, cy = v>>8;
+        for (const [dx,dy] of D4) {
+            const nx = cx+dx, ny = cy+dy;
+            if (nx<0||nx>=V||ny<0||ny>=V||visited[ny][nx]) continue;
+            const gx = nx-1, gy = ny-1;
+            if (gx>=0&&gx<N&&gy>=0&&gy<N&&grid[gy][gx]===owner) continue;
+            visited[ny][nx] = 1; queue.push(nx|(ny<<8));
         }
     }
-    let head=0;
-    while (head<queue.length) {
-        const [cx,cy]=queue[head++];
-        for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-            const nx=cx+dx, ny=cy+dy;
-            if (nx>=0&&nx<sz&&ny>=0&&ny<sz&&!visited[ny][nx]&&grid[ny][nx]!==owner) {
-                visited[ny][nx]=true; queue.push([nx,ny]);
+
+    // ── Step 2: Collect enclosed non-owner cells ──
+    const enclosed = [];
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++) {
+        if (!visited[y+1][x+1] && grid[y][x]!==owner) enclosed.push({x,y});
+    }
+    if (!enclosed.length) return;
+
+    // ── Step 3: Group into connected regions ──
+    const eSet = new Set(enclosed.map(c=>c.y*N+c.x));
+    const regionOf = new Map();
+    const regions = [];
+    for (const c of enclosed) {
+        const k = c.y*N+c.x;
+        if (regionOf.has(k)) continue;
+        const region = [c]; regionOf.set(k, regions.length);
+        const rq = [c]; let ri = 0;
+        while (ri < rq.length) {
+            const cur = rq[ri++];
+            for (const [dx,dy] of D4) {
+                const nx=cur.x+dx, ny=cur.y+dy, nk=ny*N+nx;
+                if (nx>=0&&nx<N&&ny>=0&&ny<N&&eSet.has(nk)&&!regionOf.has(nk)) {
+                    regionOf.set(nk, regions.length);
+                    region.push({x:nx,y:ny}); rq.push({x:nx,y:ny});
+                }
             }
         }
+        regions.push(region);
     }
-    for (let y=0;y<sz;y++) for (let x=0;x<sz;x++) {
-        if (!visited[y][x]&&grid[y][x]!==owner) { setCellOwner(x,y,owner); sfx.claim(); }
-    }
-}
 
-function updateSoloAI(dt) {
-    aiTimer += dt;
-    if (aiTimer < CONFIG.aiWallInterval / (1+state.timer/CONFIG.gameTime)) return;
-    aiTimer = 0;
-    placeWallLocal(Math.floor(aiX), Math.floor(aiY), 2);
-    aiX+=aiDirX; aiY+=aiDirY;
-    if (aiX<0||aiX>=CONFIG.gridSize) { aiDirX*=-1; aiX+=aiDirX*2; }
-    if (aiY<0||aiY>=CONFIG.gridSize) { aiDirY*=-1; aiY+=aiDirY*2; }
-    if (Math.random()<0.2) aiDirX = Math.random()>0.5?1:-1;
-    if (Math.random()<0.2) aiDirY = Math.random()>0.5?1:-1;
+    // ── Step 4: Claim only regions that are ALL enemy (no empty cells) ──
+    // 包圍[只有敵人]→併吞  包圍[有敵人+空白格]→無法併吞  包圍[只有空白格]→無法併吞
+    const allClaimed = [];
+    for (const region of regions) {
+        let allEnemy = true;
+        for (const c of region) { if (grid[c.y][c.x] === 0) { allEnemy = false; break; } }
+        if (allEnemy) allClaimed.push(...region);
+    }
+    if (!allClaimed.length) return;
+
+    // ── Step 5: Claim with animation ──
+    const cnt = allClaimed.length;
+    const ccx = allClaimed.reduce((s,c)=>s+c.x,0)/cnt;
+    const ccy = allClaimed.reduce((s,c)=>s+c.y,0)/cnt;
+    let maxD = 0;
+    const ds = allClaimed.map(c=>{const d=Math.sqrt((c.x-ccx)**2+(c.y-ccy)**2);if(d>maxD)maxD=d;return d;});
+
+    allClaimed.forEach((c,i)=>{
+        grid[c.y][c.x] = owner;
+        wallCells.delete(c.y*N+c.x);
+        const ownerHex = P_COLORS_HEX[owner-1];
+        const delay = maxD>0?(ds[i]/maxD)*(cnt>10?0.35:0.2):0;
+        if(cnt>10) addCellAnim(c.x,c.y,0xffffff,ownerHex,0.7,delay,0.28);
+        else if(cnt>=4) addCellAnim(c.x,c.y,P_COLORS_LIGHT[owner-1],ownerHex,0.5,delay,0.18);
+        else addCellAnim(c.x,c.y,P_COLORS_LIGHT[owner-1],ownerHex,0.35,delay,0.1);
+    });
+
+    if(cnt>10){sfx.claimHuge();vibrate([25,15,25,15,25]);screenFlash(P_COLORS_CSS[owner-1],0.25);screenShake(7,450);spawnCrystalAttack(allClaimed,owner);}
+    else if(cnt>=4){sfx.claimMed();vibrate([15,10,15]);screenFlash(P_COLORS_CSS[owner-1],0.14);screenShake(3,220);spawnCrystalAttack(allClaimed,owner);}
+    else{sfx.claimSmall();vibrate([8]);}
 }
 
 function countTerritorySolo() {
@@ -482,59 +1075,421 @@ function countTerritorySolo() {
     for (let y=0;y<CONFIG.gridSize;y++) for (let x=0;x<CONFIG.gridSize;x++) {
         if (grid[y][x]===1) p++; if (grid[y][x]===2) e++;
     }
-    return { player: Math.round(p/total*100), enemy: Math.round(e/total*100) };
+    return { player:Math.round(p/total*100), enemy:Math.round(e/total*100) };
 }
 
-// ─── Input ────────────────────────────────────────────────
-let drawing = false;
+// ─── MULTIPLAYER GRID SYNC ─────────────────────────────────
+function applyGridState(serverGrid) {
+    const newClaims = {};
+    for (let y=0; y<CONFIG.gridSize; y++) {
+        for (let x=0; x<CONFIG.gridSize; x++) {
+            const owner = serverGrid[y][x];
+            const prev = prevGridState ? prevGridState[y]?.[x]||0 : 0;
+            grid[y][x] = owner;
+            if (owner > 0) {
+                cellMeshes[y][x].material.color.setHex(P_COLORS_HEX[owner-1]);
+                // shadow removed
+            } else {
+                cellMeshes[y][x].material.color.setHex(CONFIG.neutralColor);
+                // shadow removed
+            }
+            const isW = wallCells.has(y*CONFIG.gridSize+x);
+            if (owner>0 && prev!==owner && !isW) {
+                if (!newClaims[owner]) newClaims[owner]=[];
+                newClaims[owner].push({x,y});
+            }
+        }
+    }
+    for (const [o, cells] of Object.entries(newClaims)) {
+        const oi = parseInt(o);
+        const cnt = cells.length;
+        const ccx = cells.reduce((s,c)=>s+c.x,0)/cnt;
+        const ccy = cells.reduce((s,c)=>s+c.y,0)/cnt;
+        let mxD = 0;
+        const cds = cells.map(c=>{const d=Math.sqrt((c.x-ccx)**2+(c.y-ccy)**2); if(d>mxD)mxD=d; return d;});
+        cells.forEach((c,i) => {
+            const ownerHex = P_COLORS_HEX[oi-1];
+            const delay = mxD>0 ? cds[i]/mxD*(cnt>10?0.35:0.2) : 0;
+            const flash = cnt>10 ? 0xffffff : P_COLORS_LIGHT[oi-1];
+            const scale = cnt>10 ? 0.25 : cnt>=4 ? 0.16 : 0.1;
+            addCellAnim(c.x, c.y, flash, ownerHex, cnt>10?0.7:0.45, delay, scale);
+        });
+        if (cnt>10) { sfx.claimHuge(); screenFlash(P_COLORS_CSS[oi-1], 0.22); screenShake(6,400); }
+        else if (cnt>=4) { sfx.claimMed(); screenFlash(P_COLORS_CSS[oi-1], 0.12); screenShake(3,200); }
+        else if (cnt>0) sfx.claimSmall();
+    }
+    prevGridState = serverGrid.map(row=>[...row]);
+}
 
+// ─── INK BAR ───────────────────────────────────────────────
+const inkBarEl = document.getElementById('ink-bar');
+const inkWrapEl = document.getElementById('ink-wrap');
+const inkSegs = [];
+for (let i=0; i<INK_SEGS; i++) {
+    const seg = document.createElement('div'); seg.className = 'ink-seg';
+    const fill = document.createElement('div'); fill.className = 'ink-seg-fill';
+    seg.appendChild(fill); inkBarEl.appendChild(seg);
+    inkSegs.push({el:seg, fill});
+}
+let prevFullSegs = 0;
+let inkFullSoundPlayed = false;
+
+function updateInkBar() {
+    const fullSegs = Math.floor(state.ink / CONFIG.inkPerWall);
+    const partial = (state.ink % CONFIG.inkPerWall) / CONFIG.inkPerWall;
+    for (let i=0; i<INK_SEGS; i++) {
+        const {el, fill} = inkSegs[i];
+        if (i < fullSegs) { el.className='ink-seg full'; fill.style.width='100%'; }
+        else if (i === fullSegs) { el.className='ink-seg charging'; fill.style.width=Math.round(partial*100)+'%'; }
+        else { el.className='ink-seg'; fill.style.width='0%'; }
+    }
+    if (fullSegs >= INK_SEGS) {
+        inkWrapEl.classList.add('ink-gold');
+        if (!goldParticleActive) { goldParticleActive = true; resizeInkParticles(); }
+        if (!inkFullSoundPlayed) { sfx.inkFull(); inkFullSoundPlayed = true; }
+    } else {
+        inkWrapEl.classList.remove('ink-gold');
+        goldParticleActive = false; goldParticles.length = 0;
+        inkFullSoundPlayed = false;
+    }
+    if (fullSegs>prevFullSegs && fullSegs<INK_SEGS) sfx.inkTick();
+    prevFullSegs = fullSegs;
+}
+
+function inkInsufficient() {
+    inkWrapEl.classList.remove('ink-gold','ink-empty');
+    void inkWrapEl.offsetWidth;
+    inkWrapEl.classList.add('ink-empty');
+    sfx.inkEmpty(); vibrate([30]);
+    setTimeout(() => inkWrapEl.classList.remove('ink-empty'), 450);
+}
+
+// ─── GOLD PARTICLES (energy bar full) ───────────────────────
+const inkParticleCanvas = document.getElementById('ink-particles');
+const inkPCtx = inkParticleCanvas.getContext('2d');
+const goldParticles = [];
+let goldParticleActive = false;
+
+function resizeInkParticles() {
+    const r = inkWrapEl.getBoundingClientRect();
+    inkParticleCanvas.width = r.width * devicePixelRatio;
+    inkParticleCanvas.height = r.height * devicePixelRatio;
+    inkPCtx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+function spawnGoldParticle() {
+    const r = inkWrapEl.getBoundingClientRect();
+    goldParticles.push({
+        x: Math.random() * r.width,
+        y: Math.random() * r.height,
+        vy: -(0.3 + Math.random() * 0.8),
+        vx: (Math.random() - 0.5) * 0.4,
+        size: 1.5 + Math.random() * 2.5,
+        life: 0, maxLife: 0.6 + Math.random() * 0.8,
+        color: Math.random() > 0.3 ? '#FFD700' : '#FFE870'
+    });
+}
+
+function updateGoldParticles(dt) {
+    if (!goldParticleActive) return;
+    const r = inkWrapEl.getBoundingClientRect();
+    if (r.width < 1) return;
+    if (inkParticleCanvas.width !== Math.round(r.width * devicePixelRatio)) resizeInkParticles();
+    // Spawn 3-5 particles per frame
+    for (let i = 0; i < 4; i++) spawnGoldParticle();
+    inkPCtx.clearRect(0, 0, r.width, r.height);
+    for (let i = goldParticles.length - 1; i >= 0; i--) {
+        const p = goldParticles[i];
+        p.life += dt; p.x += p.vx; p.y += p.vy;
+        if (p.life >= p.maxLife) { goldParticles.splice(i, 1); continue; }
+        const a = 1.0 - p.life / p.maxLife;
+        const fade = a < 0.3 ? a / 0.3 : (a > 0.7 ? (1 - a) / 0.3 : 1.0);
+        inkPCtx.globalAlpha = fade * 0.8;
+        inkPCtx.fillStyle = p.color;
+        inkPCtx.beginPath();
+        inkPCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        inkPCtx.fill();
+        // Glow
+        inkPCtx.globalAlpha = fade * 0.3;
+        inkPCtx.beginPath();
+        inkPCtx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+        inkPCtx.fill();
+    }
+    inkPCtx.globalAlpha = 1;
+}
+
+// ─── ALARM SYSTEM (last 10s) ───────────────────────────────
+const alarmOverlay = document.getElementById('alarm-overlay');
+let fireTimer = 0;
+
+function startAlarm() {
+    if (state.alarmActive) return;
+    state.alarmActive = true;
+    alarmOverlay.classList.add('active');
+}
+
+function stopAlarm() {
+    state.alarmActive = false;
+    alarmOverlay.classList.remove('active');
+    // Return fire particles to pool
+    for (let i=_fireActive.length-1; i>=0; i--) {
+        _fireActive[i].el.style.opacity='0'; _firePool.push(_fireActive[i].el);
+    }
+    _fireActive.length = 0;
+}
+
+function updateAlarm(sec) {
+    if (!state.alarmActive) return;
+    // Intensity ramps up: sec 10→1 maps to 0.08→0.35
+    const t = Math.max(0, Math.min(1, (10 - sec) / 9));
+    const intensity = 0.08 + t * 0.3;
+    const speed = 1.2 - t * 0.7; // 1.2s → 0.5s
+    alarmOverlay.style.setProperty('--alarm-i', intensity);
+    alarmOverlay.style.setProperty('--alarm-speed', speed + 's');
+}
+
+// ─── FIRE PARTICLES (object pool — no DOM churn) ──────────
+const _firePool = []; const _fireActive = []; const _FIRE_POOL_MAX = 30;
+const _fireColors = ['#ff4400','#ff6600','#ff2200','#ff8800','#ffaa00'];
+function _getFireEl() {
+    if (_firePool.length) return _firePool.pop();
+    if (_fireActive.length >= _FIRE_POOL_MAX) return null;
+    const p = document.createElement('div'); p.className = 'fire-particle';
+    gc.appendChild(p); return p;
+}
+function spawnFireParticles() {
+    if (!state.alarmActive) return;
+    const board = gc.querySelector('canvas'); if (!board) return;
+    const rect = board.getBoundingClientRect();
+    for (let i = 0; i < 3; i++) {
+        const p = _getFireEl(); if (!p) break;
+        const side = Math.random();
+        const c = _fireColors[Math.floor(Math.random()*_fireColors.length)];
+        let fx, fy;
+        if (side < 0.6) { fx=rect.left+Math.random()*rect.width; fy=rect.bottom-5+Math.random()*10; }
+        else if (side < 0.8) { fx=rect.left-5+Math.random()*10; fy=rect.top+Math.random()*rect.height; }
+        else { fx=rect.right-5+Math.random()*10; fy=rect.top+Math.random()*rect.height; }
+        const w=6+Math.random()*10, h=10+Math.random()*14;
+        p.style.cssText=`left:${fx}px;top:${fy}px;width:${w}px;height:${h}px;background:radial-gradient(ellipse at bottom,${c},transparent);animation-duration:${(0.4+Math.random()*0.5).toFixed(2)}s;opacity:0.9`;
+        _fireActive.push({ el:p, life:0, maxLife:1.0 });
+    }
+}
+function updateFireParticles(dt) {
+    for (let i=_fireActive.length-1; i>=0; i--) {
+        const f = _fireActive[i]; f.life += dt;
+        if (f.life >= f.maxLife) {
+            f.el.style.opacity = '0'; _firePool.push(f.el); _fireActive.splice(i,1);
+        }
+    }
+}
+
+// ─── INPUT + ULTIMATE MECHANIC ─────────────────────────────
+let drawing = false;
 function screenToGrid(sx, sy) {
     const rect = gc.getBoundingClientRect();
     const nx = ((sx-rect.left)/rect.width)*2-1;
     const ny = -((sy-rect.top)/rect.height)*2+1;
     const a = gc.clientWidth / gc.clientHeight;
-    const wx = nx * camH * a / 2;
-    const wy = ny * camH / 2;
-    const half = CONFIG.gridSize / 2;
-    return { x: Math.floor(wx/CONFIG.cellSize+half), y: Math.floor(wy/CONFIG.cellSize+half) };
+    return { x:Math.floor(nx*camH*a/2/CONFIG.cellSize + CONFIG.gridSize/2),
+             y:Math.floor(ny*camH/2/CONFIG.cellSize + CONFIG.gridSize/2) };
 }
+
+function startDraw(sx, sy) {
+    drawing = true;
+    if (state.current===GS.PLAYING && state.mode==='solo' && state.ink>=CONFIG.maxInk) {
+        state.ultimateActive = true; state.ultimateBonusGranted = false;
+    }
+    handleDraw(sx, sy);
+}
+function endDraw() { drawing = false; state.ultimateActive = false; state.ultimateBonusGranted = false; }
 
 function handleDraw(sx, sy) {
     if (state.current !== GS.PLAYING) return;
     const g = screenToGrid(sx, sy);
-
     if (state.mode === 'multiplayer') {
-        if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-            state.ws.send(JSON.stringify({ type: 'place_wall', payload: { x: g.x, y: g.y } }));
-        }
-        if (g.x>=0&&g.x<CONFIG.gridSize&&g.y>=0&&g.y<CONFIG.gridSize && grid[g.y][g.x] !== state.myColorIndex) {
-            setCellOwner(g.x, g.y, state.myColorIndex);
-            sfx.wall(); vibrate([5]);
+        if (state.ws && state.ws.readyState === WebSocket.OPEN)
+            state.ws.send(JSON.stringify({type:'place_wall', payload:{x:g.x, y:g.y}}));
+        if (g.x>=0&&g.x<CONFIG.gridSize&&g.y>=0&&g.y<CONFIG.gridSize && grid[g.y][g.x]!==state.myColorIndex) {
+            grid[g.y][g.x] = state.myColorIndex;
+            wallCells.add(g.y*CONFIG.gridSize+g.x);
+            cellMeshes[g.y][g.x].material.color.setHex(P_COLORS_HEX[state.myColorIndex-1]);
+            // shadow removed
+            addCellAnim(g.x, g.y, P_COLORS_LIGHT[state.myColorIndex-1], P_COLORS_HEX[state.myColorIndex-1], 0.25, 0, 0.15);
+            sfx.wallPlace(); vibrate([5]);
         }
     } else {
-        if (state.ink < CONFIG.inkPerWall) return;
+        if (state.ink < CONFIG.inkPerWall) {
+            if (state.ultimateActive && !state.ultimateBonusGranted) {
+                state.ink += CONFIG.inkPerWall * CONFIG.ultimateBonus;
+                state.ultimateBonusGranted = true;
+                sfx.ultimate(); screenFlash('#80D0FF', 0.15); vibrate([10,5,10,5,10]);
+            } else { inkInsufficient(); return; }
+        }
         if (placeWallLocal(g.x, g.y, 1)) {
-            state.ink -= CONFIG.inkPerWall;
-            sfx.wall(); vibrate([5]);
+            state.ink -= CONFIG.inkPerWall; sfx.wallPlace(); vibrate([5]);
         }
     }
 }
 
-function getXY(e) {
-    if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    return { x: e.clientX, y: e.clientY };
+const cvs = renderer.domElement;
+cvs.addEventListener('touchstart', e=>{ e.preventDefault(); resumeAudio(); startDraw(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+cvs.addEventListener('touchmove', e=>{ e.preventDefault(); if(drawing) handleDraw(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+cvs.addEventListener('touchend', e=>{ e.preventDefault(); endDraw(); }, {passive:false});
+cvs.addEventListener('mousedown', e=>{ e.preventDefault(); resumeAudio(); startDraw(e.clientX, e.clientY); }, {passive:false});
+cvs.addEventListener('mousemove', e=>{ if(drawing) handleDraw(e.clientX, e.clientY); });
+cvs.addEventListener('mouseup', ()=>{ endDraw(); });
+
+// ─── AI DIFFICULTY SYSTEM (progressive) ───────────────────
+// Track games played in localStorage for progressive difficulty
+let aiGamesPlayed = parseInt(localStorage.getItem('_cb_ai_games') || '0');
+function getAILevel() {
+    // Start at Normal (L3). Progressive: 0-3=L3, 4-7=L4, 8+=L5
+    if (aiGamesPlayed <= 3) return 3;
+    if (aiGamesPlayed <= 7) return 4;
+    return 5;
+}
+// AI difficulty presets per level
+// Speed is SIMILAR across levels — win rate differs via closeLoop / smartTarget / loop size
+const AI_LEVELS = {
+    3: { buildSpeed: 0.22, rushSpeed: 0.10, exploreTime: [1.5, 2.0], buildTime: [1.8, 1.5], rushChance: 0.30, rushBurst: [3, 4], closeLoop: 0.40, smartTarget: false, label: 'Normal' },
+    4: { buildSpeed: 0.21, rushSpeed: 0.09, exploreTime: [1.3, 1.8], buildTime: [1.5, 1.3], rushChance: 0.35, rushBurst: [3, 5], closeLoop: 0.60, smartTarget: true,  label: 'Hard' },
+    5: { buildSpeed: 0.20, rushSpeed: 0.08, exploreTime: [1.2, 1.5], buildTime: [1.3, 1.2], rushChance: 0.40, rushBurst: [4, 5], closeLoop: 0.80, smartTarget: true,  label: 'Expert' },
+};
+
+// ─── SOLO AI (strategy-based with progressive difficulty) ──
+let aiState = { timer:0, x:8, y:8, dx:1, dy:0, phase:'explore', phaseTimer:0, burst:0, ink:CONFIG.startInk,
+    loopTarget:null, loopPath:[], loopIdx:0 };
+
+function resetAI() {
+    const N = CONFIG.gridSize;
+    aiState = { timer:0, x:7+Math.floor(Math.random()*3), y:7+Math.floor(Math.random()*3),
+        dx:[-1,1][Math.floor(Math.random()*2)], dy:[-1,0,1][Math.floor(Math.random()*3)],
+        phase:'explore', phaseTimer:0, burst:0, ink:CONFIG.startInk,
+        loopTarget:null, loopPath:[], loopIdx:0 };
 }
 
-// Bindto canvas only — not gc — so UI buttons receive touch events
-const cvs = renderer.domElement;
-cvs.addEventListener('touchstart', (e) => { e.preventDefault(); drawing=true; handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
-cvs.addEventListener('touchmove', (e) => { e.preventDefault(); if(drawing) handleDraw(getXY(e).x, getXY(e).y); }, {passive:false});
-cvs.addEventListener('touchend', (e) => { e.preventDefault(); drawing=false; }, {passive:false});
-cvs.addEventListener('mousedown', (e) => { e.preventDefault(); drawing=true; handleDraw(e.clientX, e.clientY); }, {passive:false});
-cvs.addEventListener('mousemove', (e) => { if(drawing) handleDraw(e.clientX, e.clientY); });
-cvs.addEventListener('mouseup', () => { drawing=false; });
+// Generate a rectangular loop path for AI to draw (enclose territory)
+function aiPlanLoop(cx, cy, level) {
+    const N = CONFIG.gridSize;
+    const lv = AI_LEVELS[level];
+    // Rectangle size: 2x2 at L1-2, up to 4x4 at L5
+    const minSize = level <= 2 ? 2 : 3;
+    const maxSize = Math.min(level + 1, 5);
+    const w = minSize + Math.floor(Math.random() * (maxSize - minSize + 1));
+    const h = minSize + Math.floor(Math.random() * (maxSize - minSize + 1));
+    // Find a good starting corner near AI's current position
+    let sx = Math.max(0, Math.min(N - w, Math.round(cx) - Math.floor(w/2)));
+    let sy = Math.max(0, Math.min(N - h, Math.round(cy) - Math.floor(h/2)));
+    // Build rectangle path (clockwise)
+    const path = [];
+    for (let i = 0; i <= w; i++) path.push({x: sx+i, y: sy});           // top
+    for (let i = 1; i <= h; i++) path.push({x: sx+w, y: sy+i});         // right
+    for (let i = w-1; i >= 0; i--) path.push({x: sx+i, y: sy+h});      // bottom
+    for (let i = h-1; i >= 1; i--) path.push({x: sx, y: sy+i});        // left
+    return path;
+}
 
-// ─── Screen Management ────────────────────────────────────
+// Smart targeting: find area with least player walls (attack weak spots)
+function aiFindTarget(level) {
+    const N = CONFIG.gridSize;
+    const lv = AI_LEVELS[level];
+    if (!lv.smartTarget) return null;
+    // Divide grid into quadrants, find one with most neutral/enemy cells
+    const quads = [{x:0,y:0},{x:N/2,y:0},{x:0,y:N/2},{x:N/2,y:N/2}];
+    let best = null, bestScore = -1;
+    for (const q of quads) {
+        let score = 0;
+        for (let y=Math.floor(q.y); y<Math.min(N,Math.floor(q.y+N/2)); y++)
+            for (let x=Math.floor(q.x); x<Math.min(N,Math.floor(q.x+N/2)); x++)
+                if (grid[y][x] !== 2) score++; // not AI-owned = desirable
+        if (score > bestScore) { bestScore = score; best = q; }
+    }
+    return best;
+}
+
+function updateSoloAI(dt) {
+    const N = CONFIG.gridSize;
+    const level = getAILevel();
+    const lv = AI_LEVELS[level];
+
+    // AI uses same ink rules as player (fair!)
+    const sec = Math.ceil(state.timer);
+    const aiRegenMult = sec <= 10 ? CONFIG.aiRegenMultLast10s : 1;
+    aiState.ink = Math.min(CONFIG.maxInk, aiState.ink + CONFIG.inkRegen * aiRegenMult * dt);
+
+    aiState.timer += dt; aiState.phaseTimer += dt;
+
+    // Phase transitions
+    if (aiState.phase==='explore' && aiState.phaseTimer > lv.exploreTime[0]+Math.random()*lv.exploreTime[1]) {
+        // Decide: try to close a loop or just build randomly
+        if (Math.random() < lv.closeLoop) {
+            aiState.phase = 'loop';
+            aiState.loopPath = aiPlanLoop(aiState.x, aiState.y, level);
+            aiState.loopIdx = 0;
+        } else {
+            aiState.phase = Math.random()<lv.rushChance?'rush':'build';
+        }
+        aiState.phaseTimer=0;
+        if (aiState.phase==='rush') aiState.burst = lv.rushBurst[0]+Math.floor(Math.random()*lv.rushBurst[1]);
+    }
+    if (aiState.phase==='build' && aiState.phaseTimer > lv.buildTime[0]+Math.random()*lv.buildTime[1]) {
+        aiState.phase = Math.random()<lv.rushChance?'rush':'explore'; aiState.phaseTimer=0;
+        if (aiState.phase==='rush') aiState.burst = lv.rushBurst[0]-1+Math.floor(Math.random()*(lv.rushBurst[1]-1));
+    }
+    if (aiState.phase==='rush' && aiState.burst<=0) { aiState.phase='explore'; aiState.phaseTimer=0; }
+    if (aiState.phase==='loop' && aiState.loopIdx >= aiState.loopPath.length) { aiState.phase='explore'; aiState.phaseTimer=0; }
+
+    // Smart targeting: occasionally steer toward weak quadrant
+    if (lv.smartTarget && aiState.phase==='explore' && Math.random() < 0.1) {
+        const target = aiFindTarget(level);
+        if (target) {
+            aiState.dx = target.x + N/4 > aiState.x ? 1 : -1;
+            aiState.dy = target.y + N/4 > aiState.y ? 1 : -1;
+        }
+    }
+
+    let interval;
+    switch(aiState.phase) {
+        case 'explore': interval=0.55+Math.random()*0.5; break;
+        case 'build':   interval=lv.buildSpeed+Math.random()*0.08; break;
+        case 'rush':    interval=lv.rushSpeed+Math.random()*0.04; break;
+        case 'loop':    interval=lv.buildSpeed+Math.random()*0.06; break;
+    }
+    if (aiState.timer < interval) return;
+    aiState.timer = 0;
+    if (aiState.phase==='rush') aiState.burst--;
+
+    // AI must spend ink — no cheating
+    if (aiState.ink < CONFIG.inkPerWall) return;
+
+    if (aiState.phase==='loop') {
+        // Follow planned loop path
+        const step = aiState.loopPath[aiState.loopIdx];
+        if (step) {
+            const sx = Math.max(0, Math.min(N-1, step.x));
+            const sy = Math.max(0, Math.min(N-1, step.y));
+            if (placeWallLocal(sx, sy, 2)) aiState.ink -= CONFIG.inkPerWall;
+            aiState.x = sx; aiState.y = sy;
+        }
+        aiState.loopIdx++;
+    } else {
+        // Random walk placement
+        const x = Math.round(Math.max(0,Math.min(N-1,aiState.x)));
+        const y = Math.round(Math.max(0,Math.min(N-1,aiState.y)));
+        if (placeWallLocal(x, y, 2)) aiState.ink -= CONFIG.inkPerWall;
+
+        aiState.x += aiState.dx; aiState.y += aiState.dy;
+        if (aiState.x<0) { aiState.x=0; aiState.dx=Math.abs(aiState.dx)||1; }
+        if (aiState.x>=N) { aiState.x=N-1; aiState.dx=-(Math.abs(aiState.dx)||1); }
+        if (aiState.y<0) { aiState.y=0; aiState.dy=Math.abs(aiState.dy)||1; }
+        if (aiState.y>=N) { aiState.y=N-1; aiState.dy=-(Math.abs(aiState.dy)||1); }
+        if (Math.random()<0.25) aiState.dx=[-1,0,1][Math.floor(Math.random()*3)];
+        if (Math.random()<0.25) aiState.dy=[-1,0,1][Math.floor(Math.random()*3)];
+        if (aiState.dx===0&&aiState.dy===0) aiState.dx=Math.random()>0.5?1:-1;
+    }
+}
+
+// ─── SCREEN MANAGEMENT ────────────────────────────────────
 function setScreen(id) {
     state.current = id;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -544,407 +1499,492 @@ function setScreen(id) {
         document.getElementById('hud').classList.add('active');
         document.querySelectorAll('.screen').forEach(s => { if(s.id!=='hud') s.classList.remove('active'); });
     }
-    // Show/hide canvas grid when not playing
-    boardBg.visible = (id === 'playing');
-    borderMesh.visible = (id === 'playing');
-    cellMeshes.flat().forEach(m => m.visible = (id === 'playing'));
+    const inGame = (id==='playing');
+    const showBoard = inGame || id===GS.GAMEOVER;
+    cellMeshes.flat().forEach(m => m.visible = showBoard);
+    // shadow removed
+    setAvatarCrystalsVisible(inGame);
+    if (!inGame) stopAlarm();
+    if (!showBoard) clearCrystalParticles();
+    // Blur canvas during gameover
+    renderer.domElement.style.filter = id===GS.GAMEOVER ? 'blur(3px) brightness(0.6)' : '';
+    renderer.domElement.style.transition = 'filter 0.5s';
 }
-window._setScreen = setScreen;
 
-// ─── Solo Game Flow ───────────────────────────────────────
-let soloStartedOnce = false;
+// ─── SOLO GAME FLOW ────────────────────────────────────────
+let lastWarnTick = 0;
 
-window._startSolo = function() {
-    state.mode = 'solo';
-    state.ink = CONFIG.maxInk;
-    state.timer = CONFIG.gameTime;
-    state.myColorIndex = 1;
-    Analytics.gameStart();
-    Ads.config();
-    soloStartedOnce = true;
-    initGrid();
-    resetAI();
+function startSolo() {
+    state.mode='solo'; state.ink=CONFIG.startInk; state.timer=CONFIG.gameTime;
+    _sfxMuted=false; _gameEnded=false; masterGain.gain.setValueAtTime(1,actx.currentTime); // reset for new game
+    state.myColorIndex=1; lastWarnTick=0; prevFullSegs=0; inkFullSoundPlayed=false;
+    state.ultimateActive=false; state.ultimateBonusGranted=false;
+    state.alarmActive=false; fireTimer=0;
+    initGrid(); resetAI(); clearCrystalParticles();
+    resetAvatarStyle('self-avatar'); resetAvatarStyle('opp-avatar');
+    resetAvatarCrystals();
+    document.getElementById('self-avatar').style.background=P_COLORS_CSS[0];
+    document.getElementById('self-avatar').textContent='Y';
+    document.getElementById('self-name').textContent='You';
+    document.getElementById('opp-avatar').style.background=P_COLORS_CSS[1];
+    document.getElementById('opp-avatar').textContent='B';
+    const lvl = getAILevel();
+    document.getElementById('opp-name').textContent=`Bot (${AI_LEVELS[lvl].label})`;
+    updateInkBar();
     setScreen('playing');
-    updateHUDSolo();
-    // Set HUD avatars for solo
-    document.getElementById('my-avatar').style.background = P_COLORS_CSS[0];
-    document.getElementById('my-avatar').textContent = 'Y';
-    document.getElementById('my-name').textContent = 'You';
-    document.getElementById('opp-avatar').style.background = P_COLORS_CSS[1];
-    document.getElementById('opp-avatar').textContent = 'B';
-    document.getElementById('opp-name').textContent = 'Bot';
-    document.getElementById('ink-fill').style.background = P_COLORS_CSS[0];
+    Analytics.gameStart();
 };
 
+let _gameEnded = false;
 function updateSoloGame(dt) {
-    state.timer -= dt;
-    if (state.timer <= 0) { endSoloGame(); return; }
-    state.ink = Math.min(CONFIG.maxInk, state.ink + CONFIG.inkRegen * dt);
-    document.getElementById('ink-fill').style.width = (state.ink/CONFIG.maxInk*100)+'%';
-    updateSoloAI(dt);
-    updateHUDSolo();
-}
+    state.timer-=dt;
+    if (state.timer<=0) { state.timer=0; stopAlarm(); if(!_gameEnded){_gameEnded=true; endSoloGame();} return; }
 
-function updateHUDSolo() {
     const sec = Math.ceil(state.timer);
-    document.getElementById('hud-timer').textContent = String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+    const regenMultiplier = sec <= 10 ? CONFIG.aiRegenMultLast10s : 1;
+    state.ink=Math.min(CONFIG.maxInk, state.ink+CONFIG.inkRegen*regenMultiplier*dt);
+    updateInkBar();
+    updateSoloAI(dt);
+
+    const t = countTerritorySolo();
+    document.getElementById('self-pct').textContent=t.player+'%';
+    document.getElementById('opp-pct').textContent=t.enemy+'%';
+    document.getElementById('self-bar').style.width=t.player+'%';
+    document.getElementById('opp-bar').style.width=t.enemy+'%';
+
+    const timerEl=document.getElementById('hud-timer');
+    timerEl.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+    if (sec<=10) {
+        timerEl.classList.add('warn');
+        if(sec!==lastWarnTick){lastWarnTick=sec; sfx.timerWarn();}
+        startAlarm();
+        updateAlarm(sec);
+    } else {
+        timerEl.classList.remove('warn');
+    }
 }
 
 function endSoloGame() {
-    const t = countTerritorySolo();
+    // Track games for progressive AI difficulty
+    aiGamesPlayed++;
+    localStorage.setItem('_cb_ai_games', aiGamesPlayed);
+    const t=countTerritorySolo();
+    const lvl = getAILevel();
     const won = t.player > t.enemy;
-    Analytics.gameOver({ mode: 'solo', territoryPct: t.player, win: won, rank: won ? 1 : 2 });
-    Ads.showInterstitial(() => {
-        showGameOver(won, [
-            { name:'You', pct:t.player, color:P_COLORS_CSS[0], isMe:true },
-            { name:'Bot', pct:t.enemy, color:P_COLORS_CSS[1], isMe:false },
-        ]);
-        CTA.onGameOver(document.getElementById('gameover'));
-    });
+    Analytics.addPlayTime(CONFIG.gameTime - state.timer);
+    Analytics.gameOver({ win: won, territoryPct: t.player, enemyPct: t.enemy, aiLevel: lvl, aiLabel: AI_LEVELS[lvl].label, mode: 'solo', playTimeSec: Math.round(CONFIG.gameTime - state.timer) });
+    showGameOver(won, [
+        {name:'You', pct:t.player, color:P_COLORS_CSS[0], isMe:true},
+        {name:`Bot (${AI_LEVELS[lvl].label})`, pct:t.enemy, color:P_COLORS_CSS[1], isMe:false},
+    ]);
 }
 
-// ─── Quick Play ───────────────────────────────────────────
-window._quickPlay = async function() {
-    if (!CONFIG.serverUrl) { window._startSolo(); return; }
+// ─── QUICK PLAY ────────────────────────────────────────────
+async function quickPlay() {
+    if (!CONFIG.serverUrl) { startSolo(); return; }
     setScreen('matching');
-    state.matchTimer = 0;
-    document.getElementById('match-timer').textContent = '0s';
-    state.matchInterval = setInterval(() => {
+    state.matchTimer=0;
+    document.getElementById('match-timer').textContent='0s';
+    state.matchInterval=setInterval(()=>{
         state.matchTimer++;
-        document.getElementById('match-timer').textContent = state.matchTimer + 's';
-        // Auto-start with AI after timeout
-        if (state.matchTimer >= CONFIG.quickPlayAutoStart && state.isHost && state.ws && state.ws.readyState === WebSocket.OPEN) {
-            state.ws.send(JSON.stringify({ type: 'start_game' }));
+        document.getElementById('match-timer').textContent=state.matchTimer+'s';
+        if (state.matchTimer>=CONFIG.quickPlayAutoStart) {
+            // No opponent found → close server connection, fall back to local Solo with AI
             clearInterval(state.matchInterval);
+            if (state.ws) { state.ws.close(); state.ws=null; }
+            showConnStatus('No opponent found, starting vs AI...', false);
+            setTimeout(()=>startSolo(), 800);
         }
     }, 1000);
     try {
         showConnStatus('Creating match...');
-        const res = await fetch(CONFIG.serverUrl + '/api/rooms', { method: 'POST' });
+        const res = await fetch(CONFIG.serverUrl+'/api/rooms', {method:'POST'});
         const data = await res.json();
-        state.mode = 'multiplayer';
-        connectToRoom(data.roomCode);
-    } catch (e) {
+        state.mode='multiplayer'; connectToRoom(data.roomCode);
+    } catch(e) {
         clearInterval(state.matchInterval);
         showConnStatus('Server unavailable, starting solo...', true);
-        setTimeout(() => window._startSolo(), 1500);
+        setTimeout(()=>startSolo(), 1500);
     }
 };
-
-window._cancelMatch = function() {
+function cancelMatch() {
     clearInterval(state.matchInterval);
-    if (state.ws) { state.ws.close(); state.ws = null; }
-    state.mode = 'solo';
-    reconnectAttempts = 0;
-    showConnStatus('');
-    setScreen('menu');
+    if (state.ws) { state.ws.close(); state.ws=null; }
+    state.mode='solo'; reconnectAttempts=0; showConnStatus(''); setScreen('menu');
 };
 
-// ─── Friends Flow ─────────────────────────────────────────
-window._showFriends = function() {
+// ─── FRIENDS FLOW ──────────────────────────────────────────
+function showFriends() {
     if (!CONFIG.serverUrl) { alert('Server not configured'); return; }
-    setScreen('friends');
-    document.getElementById('room-code-input').value = '';
+    setScreen('friends'); document.getElementById('room-code-input').value='';
 };
-
-window._createRoom = async function() {
+async function createRoom() {
     try {
         showConnStatus('Creating room...');
-        const res = await fetch(CONFIG.serverUrl + '/api/rooms', { method: 'POST' });
+        const res = await fetch(CONFIG.serverUrl+'/api/rooms', {method:'POST'});
         const data = await res.json();
-        state.mode = 'multiplayer';
-        connectToRoom(data.roomCode);
-    } catch (e) { showConnStatus('Failed to create room', true); }
+        state.mode='multiplayer'; connectToRoom(data.roomCode);
+    } catch(e) { showConnStatus('Failed to create room', true); }
 };
-
-window._joinRoom = function() {
+function joinRoom() {
     const code = document.getElementById('room-code-input').value.toUpperCase().trim();
-    if (code.length !== 4) return;
-    state.mode = 'multiplayer';
-    connectToRoom(code);
+    if (code.length!==4) return;
+    state.mode='multiplayer'; connectToRoom(code);
 };
-
-// ─── Lobby ────────────────────────────────────────────────
-window._requestStart = function() {
-    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-        state.ws.send(JSON.stringify({ type: 'start_game' }));
-    }
+function requestStart() {
+    if (state.ws?.readyState===WebSocket.OPEN) state.ws.send(JSON.stringify({type:'start_game'}));
 };
-
-window._leaveRoom = function() {
+function leaveRoom() {
     clearInterval(state.matchInterval);
-    if (state.ws) { state.ws.close(); state.ws = null; }
-    state.mode = 'solo';
-    state.players = [];
-    reconnectAttempts = 0;
-    showConnStatus('');
-    setScreen('menu');
+    if (state.ws) { state.ws.close(); state.ws=null; }
+    state.mode='solo'; state.players=[]; reconnectAttempts=0; showConnStatus(''); setScreen('menu');
 };
 
-// ─── Game Over ────────────────────────────────────────────
+// ─── GAME OVER ─────────────────────────────────────────────
 function showGameOver(won, players) {
-    const title = document.getElementById('result-title');
-    title.textContent = won ? 'VICTORY!' : 'DEFEATED';
-    title.style.color = won ? '#4CAF50' : '#F44336';
-
-    // Sort by pct descending
-    players.sort((a,b) => b.pct - a.pct);
-    let html = '';
-    for (const p of players) {
-        html += `<div class="score-row">
-            <div class="s-avatar" style="background:${p.color}">${p.name[0]}</div>
-            <div class="s-name">${p.name}${p.isMe?' (You)':''}</div>
-            <div class="s-pct">${p.pct}%</div>
-        </div>`;
-    }
-    document.getElementById('result-scores').innerHTML = html;
-
-    if (won) sfx.win(); else sfx.lose();
-    vibrate(won ? [20] : [60,30,60]);
-    setScreen('gameover');
+    // KILL all currently playing sounds instantly, then play destroy ONCE
+    muteAllGameplaySounds();
+    shatterAvatarCrystal(won ? 'opp-avatar' : 'self-avatar');
+    // Play destroy ONCE via direct path (bypasses muted masterGain)
+    playSndDirect('end_destroy.ogg', 0.3);
+    vibrate(won?[20]:[40,20,40]);
+    screenFlash('#ffffff', 0.2);
+    // 1.5s for explosion, then results
+    setTimeout(()=>{
+        // Restore audio for result screen
+        _sfxMuted = false;
+        masterGain.gain.setValueAtTime(1, actx.currentTime);
+        function _showResults() {
+            const title=document.getElementById('result-title');
+            title.textContent=won?'VICTORY!':'DEFEATED';
+            title.style.color=won?'#80D0FF':'#FF3B3B';
+            title.style.textShadow=won?'0 0 15px rgba(80,200,255,0.5)':'0 0 15px rgba(255,59,59,0.5)';
+            players.sort((a,b)=>b.pct-a.pct);
+            let html='';
+            for (const p of players) {
+                html+=`<div class="score-row"><div class="s-avatar" style="background:${p.color};clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)">${p.name[0]}</div>
+                    <div class="s-name">${p.name}${p.isMe?' (You)':''}</div><div class="s-pct" data-target="${p.pct}">0%</div></div>`;
+            }
+            document.getElementById('result-scores').innerHTML=html;
+            setScreen('gameover');
+            // Victory/lose sound plays AFTER result screen appears
+            if (won) sfx.win(); else sfx.lose();
+            // Count-up animation for percentages
+            document.querySelectorAll('.s-pct[data-target]').forEach(el => {
+                const target = parseInt(el.dataset.target);
+                let cur = 0;
+                const step = Math.max(1, Math.ceil(target / 30));
+                const iv = setInterval(() => {
+                    cur = Math.min(cur + step, target);
+                    el.textContent = cur + '%';
+                    if (cur >= target) clearInterval(iv);
+                }, 30);
+            });
+            // CTA banner (shows after SHOW_AFTER_GAMES games)
+            CTA.onGameOver(document.getElementById('gameover') || document.body);
+        }
+        // Ads interstitial (no-op if ADSENSE_ID not set)
+        Ads.showInterstitial(_showResults);
+    }, 1500);
 }
-
-window._retry = function() {
+function retry() {
+    renderer.domElement.style.filter = '';
     Analytics.retry();
-    if (state.mode === 'multiplayer' && state.ws && state.ws.readyState === WebSocket.OPEN) {
-        state.ws.send(JSON.stringify({ type: 'start_game' }));
-    } else {
-        window._startSolo();
-    }
+    if (state.mode==='multiplayer' && state.ws?.readyState===WebSocket.OPEN)
+        state.ws.send(JSON.stringify({type:'start_game'}));
+    else startSolo();
 };
-
-window._backToMenu = function() {
-    if (state.ws) { state.ws.close(); state.ws = null; }
+function backToMenu() {
+    renderer.domElement.style.filter = '';
+    if (state.ws) { state.ws.close(); state.ws=null; }
     clearInterval(state.matchInterval);
-    state.mode = 'solo';
-    state.players = [];
-    reconnectAttempts = 0;
-    showConnStatus('');
-    setScreen('menu');
+    state.mode='solo'; state.players=[]; reconnectAttempts=0; showConnStatus(''); setScreen('menu');
 };
 
-// ─── Multiplayer: WebSocket ───────────────────────────────
+// ─── MULTIPLAYER: WebSocket ────────────────────────────────
 let reconnectAttempts = 0;
 
 function connectToRoom(roomCode) {
-    if (!CONFIG.serverUrl) { showConnStatus('No server', true); return; }
-    const wsUrl = CONFIG.serverUrl.replace(/^http/, 'ws') + '/api/rooms/' + roomCode + '/ws';
+    if (!CONFIG.serverUrl) { showConnStatus('No server',true); return; }
+    const wsUrl = CONFIG.serverUrl.replace(/^http/,'ws')+'/api/rooms/'+roomCode+'/ws';
     const ws = new WebSocket(wsUrl);
-    state.ws = ws;
-    state.roomCode = roomCode;
+    state.ws=ws; state.roomCode=roomCode;
     showConnStatus('Connecting...');
-
-    ws.onopen = () => {
-        showConnStatus('Connected', false, true);
-        const name = 'Player-' + Math.random().toString(36).slice(2,5).toUpperCase();
-        ws.send(JSON.stringify({ type: 'join', payload: { playerName: name } }));
-        const hb = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+    ws.onopen=()=>{
+        showConnStatus('Connected',false,true);
+        const name='Player-'+Math.random().toString(36).slice(2,5).toUpperCase();
+        ws.send(JSON.stringify({type:'join', payload:{playerName:name}}));
+        const hb=setInterval(()=>{
+            if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'ping'}));
             else clearInterval(hb);
         }, 15000);
     };
-
-    ws.onmessage = (evt) => {
-        try { handleServerMessage(JSON.parse(evt.data)); } catch {}
+    ws.onmessage=(evt)=>{ try{handleServerMessage(JSON.parse(evt.data));}catch{} };
+    ws.onclose=()=>{
+        showConnStatus('Disconnected',true);
+        if(state.current===GS.PLAYING||state.current==='lobby') attemptReconnect(roomCode);
     };
-
-    ws.onclose = () => {
-        showConnStatus('Disconnected', true);
-        if (state.current === GS.PLAYING || state.current === 'lobby') attemptReconnect(roomCode);
-    };
-
-    ws.onerror = () => showConnStatus('Connection error', true);
+    ws.onerror=()=>showConnStatus('Connection error',true);
 }
 
 function attemptReconnect(roomCode) {
-    if (reconnectAttempts >= 5) { showConnStatus('Connection lost', true); return; }
-    state.reconnecting = true;
-    const delay = 1000 * Math.pow(2, reconnectAttempts);
-    reconnectAttempts++;
+    if (reconnectAttempts>=5) { showConnStatus('Connection lost',true); return; }
+    state.reconnecting=true; reconnectAttempts++;
     showConnStatus(`Reconnecting (${reconnectAttempts}/5)...`);
-    setTimeout(() => connectToRoom(roomCode), delay);
+    setTimeout(()=>connectToRoom(roomCode), 1000*Math.pow(2,reconnectAttempts));
 }
 
 function handleServerMessage(msg) {
-    switch (msg.type) {
+    switch(msg.type) {
         case 'joined':
-            reconnectAttempts = 0;
-            state.reconnecting = false;
-            state.myPlayerId = msg.payload.playerId;
-            state.myColorIndex = msg.payload.colorIndex;
-            state.isHost = !!msg.payload.isHost;
-            state.roomCode = msg.payload.roomCode;
-            document.getElementById('lobby-code').textContent = msg.payload.roomCode;
-            // If came from Quick Play, stay on matching screen (not lobby)
-            if (state.current !== GS.MATCHING) setScreen('lobby');
+            reconnectAttempts=0; state.reconnecting=false;
+            state.myPlayerId=msg.payload.playerId; state.myColorIndex=msg.payload.colorIndex;
+            state.isHost=!!msg.payload.isHost; state.roomCode=msg.payload.roomCode;
+            document.getElementById('lobby-code').textContent=msg.payload.roomCode;
+            if (state.current!==GS.MATCHING) setScreen('lobby');
             break;
-
         case 'room_update':
-            state.players = msg.payload.players;
-            state.isHost = msg.payload.hostId === state.myPlayerId;
-            updateLobbyUI(msg.payload);
-            break;
-
+            state.players=msg.payload.players; state.isHost=msg.payload.hostId===state.myPlayerId;
+            updateLobbyUI(msg.payload); break;
         case 'countdown':
-            clearInterval(state.matchInterval);
-            setScreen('countdown');
-            document.getElementById('count-num').textContent = msg.payload.seconds;
-            sfx.countdown();
-            break;
-
+            clearInterval(state.matchInterval); setScreen('countdown');
+            document.getElementById('count-num').textContent=msg.payload.seconds; sfx.countdown(); break;
         case 'game_state':
-            if (state.current !== GS.PLAYING) {
-                initGrid();
-                setScreen('playing');
-                sfx.go();
-                setupHUDMultiplayer();
+            if (state.current!==GS.PLAYING) {
+                initGrid(); prevFullSegs=0; setScreen('playing'); sfx.go(); setupHUDMultiplayer();
                 Analytics.gameStart();
-                Ads.config();
             }
             applyGridState(msg.payload.grid);
-            state.scores = msg.payload.scores;
-            state.timer = msg.payload.timer;
-            if (msg.payload.ink && msg.payload.ink[state.myPlayerId] !== undefined) {
-                state.ink = msg.payload.ink[state.myPlayerId];
-            }
-            updateHUDMultiplayer();
-            break;
-
+            state.scores=msg.payload.scores; state.timer=msg.payload.timer;
+            if (msg.payload.ink?.[state.myPlayerId]!==undefined) state.ink=msg.payload.ink[state.myPlayerId];
+            updateHUDMultiplayer(); break;
         case 'wall_placed':
-            setCellOwner(msg.payload.x, msg.payload.y, msg.payload.colorIndex);
-            if (msg.payload.playerId !== state.myPlayerId) sfx.wall();
+            wallCells.add(msg.payload.y*CONFIG.gridSize+msg.payload.x);
+            cellMeshes[msg.payload.y]?.[msg.payload.x]?.material.color.setHex(P_COLORS_HEX[msg.payload.colorIndex-1]);
+            // shadow removed
+            grid[msg.payload.y][msg.payload.x]=msg.payload.colorIndex;
+            addCellAnim(msg.payload.x, msg.payload.y, P_COLORS_LIGHT[msg.payload.colorIndex-1], P_COLORS_HEX[msg.payload.colorIndex-1], 0.25, 0, 0.15);
+            if (msg.payload.playerId!==state.myPlayerId) sfx.wallPlace();
             break;
-
-        case 'game_over':
-            showGameOverMultiplayer(msg.payload.rankings);
-            break;
-
+        case 'game_over': showGameOverMultiplayer(msg.payload.rankings); break;
         case 'error':
-            showConnStatus(msg.payload.message, true);
-            if (msg.payload.code === 'ROOM_NOT_JOINABLE' || msg.payload.code === 'ROOM_FULL') {
-                setTimeout(() => setScreen('menu'), 2000);
-            }
+            showConnStatus(msg.payload.message,true);
+            if (msg.payload.code==='ROOM_NOT_JOINABLE'||msg.payload.code==='ROOM_FULL')
+                setTimeout(()=>setScreen('menu'), 2000);
             break;
-
         case 'pong': break;
     }
 }
 
 function setupHUDMultiplayer() {
-    const me = state.players.find(p => p.id === state.myPlayerId);
-    const opp = state.players.find(p => p.id !== state.myPlayerId);
+    const me=state.players.find(p=>p.id===state.myPlayerId);
+    const opp=state.players.find(p=>p.id!==state.myPlayerId);
     if (me) {
-        document.getElementById('my-avatar').style.background = P_COLORS_CSS[me.colorIndex - 1] || P_COLORS_CSS[0];
-        document.getElementById('my-avatar').textContent = (me.name || 'Y')[0].toUpperCase();
-        document.getElementById('my-name').textContent = me.name || 'You';
-        document.getElementById('ink-fill').style.background = P_COLORS_CSS[me.colorIndex - 1] || P_COLORS_CSS[0];
+        document.getElementById('self-avatar').style.background=P_COLORS_CSS[me.colorIndex-1]||P_COLORS_CSS[0];
+        document.getElementById('self-avatar').textContent=(me.name||'Y')[0].toUpperCase();
+        document.getElementById('self-name').textContent=me.name||'You';
     }
     if (opp) {
-        document.getElementById('opp-avatar').style.background = P_COLORS_CSS[opp.colorIndex - 1] || P_COLORS_CSS[1];
-        document.getElementById('opp-avatar').textContent = (opp.name || 'O')[0].toUpperCase();
-        document.getElementById('opp-name').textContent = opp.name + (opp.isAI ? ' (AI)' : '');
+        document.getElementById('opp-avatar').style.background=P_COLORS_CSS[opp.colorIndex-1]||P_COLORS_CSS[1];
+        document.getElementById('opp-avatar').textContent=(opp.name||'O')[0].toUpperCase();
+        document.getElementById('opp-name').textContent=opp.name+(opp.isAI?' (AI)':'');
     }
 }
 
 function updateHUDMultiplayer() {
-    const sec = Math.ceil(state.timer);
-    document.getElementById('hud-timer').textContent = String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
-    document.getElementById('ink-fill').style.width = (state.ink / CONFIG.maxInk * 100) + '%';
+    const sec=Math.ceil(state.timer);
+    const timerEl=document.getElementById('hud-timer');
+    timerEl.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+    if (sec<=10) timerEl.classList.add('warn'); else timerEl.classList.remove('warn');
+    updateInkBar();
+    if (state.scores) {
+        const me=state.players.find(p=>p.id===state.myPlayerId);
+        const opp=state.players.find(p=>p.id!==state.myPlayerId);
+        if (me&&state.scores[me.id]!==undefined) {
+            document.getElementById('self-pct').textContent=state.scores[me.id]+'%';
+            document.getElementById('self-bar').style.width=state.scores[me.id]+'%';
+        }
+        if (opp&&state.scores[opp.id]!==undefined) {
+            document.getElementById('opp-pct').textContent=state.scores[opp.id]+'%';
+            document.getElementById('opp-bar').style.width=state.scores[opp.id]+'%';
+        }
+    }
 }
 
 function updateLobbyUI(data) {
-    const container = document.getElementById('player-slots');
-    let html = '';
+    const container=document.getElementById('player-slots');
+    let html='';
     for (const p of data.players) {
-        const c = P_COLORS_CSS[p.colorIndex - 1] || '#999';
-        const suffix = p.isAI ? ' (AI)' : (p.id === state.myPlayerId ? ' (You)' : '');
-        html += `<div class="player-slot">
-            <div class="avatar" style="background:${c}">${p.name[0].toUpperCase()}</div>
-            <div><div class="pname">${p.name}</div><div class="ptag">${suffix}</div></div>
-        </div>`;
+        const c=P_COLORS_CSS[p.colorIndex-1]||'#999';
+        const suffix=p.isAI?' (AI)':(p.id===state.myPlayerId?' (You)':'');
+        html+=`<div class="player-slot"><div class="avatar" style="background:${c}">${p.name[0].toUpperCase()}</div>
+            <div><div class="pname">${p.name}</div><div class="ptag">${suffix}</div></div></div>`;
     }
-    for (let i = data.players.length; i < 2; i++) {
-        html += `<div class="player-slot empty">
-            <div class="avatar" style="background:#ccc">?</div>
-            <div><div class="pname">Waiting...</div></div>
-        </div>`;
-    }
-    container.innerHTML = html;
-
-    const startBtn = document.getElementById('start-btn');
-    startBtn.style.display = state.isHost ? '' : 'none';
-
-    document.getElementById('lobby-status').textContent =
-        data.players.length < 2 ? 'Waiting for opponent... (AI will join if no one comes)' : 'Ready! Host can start.';
+    for (let i=data.players.length;i<2;i++)
+        html+=`<div class="player-slot empty"><div class="avatar" style="background:#555">?</div><div><div class="pname">Waiting...</div></div></div>`;
+    container.innerHTML=html;
+    document.getElementById('start-btn').style.display=state.isHost?'':'none';
+    document.getElementById('lobby-status').textContent=data.players.length<2?'Waiting for opponent...':'Ready! Host can start.';
 }
 
 function showGameOverMultiplayer(rankings) {
-    const myRank = rankings.find(r => r.id === state.myPlayerId);
+    const myRank=rankings.find(r=>r.id===state.myPlayerId);
     const won = myRank && myRank.rank === 1;
-    Analytics.gameOver({ mode: 'multiplayer', territoryPct: myRank?.territory || 0, win: won, rank: myRank?.rank || 0, playerCount: rankings.length, roomCode: state.roomCode });
-    const players = rankings.map(r => ({
-        name: r.id === state.myPlayerId ? 'You' : r.name,
-        pct: r.territory,
-        color: P_COLORS_CSS[r.colorIndex - 1] || '#999',
-        isMe: r.id === state.myPlayerId,
-    }));
-    Ads.showInterstitial(() => {
-        showGameOver(won, players);
-        CTA.onGameOver(document.getElementById('gameover'));
-    });
+    Analytics.addPlayTime(CONFIG.gameTime - state.timer);
+    Analytics.gameOver({ win: won, territoryPct: myRank?.territory || 0, rank: myRank?.rank || 0, mode: 'multiplayer', playTimeSec: Math.round(CONFIG.gameTime - state.timer) });
+    showGameOver(won, rankings.map(r=>({
+        name:r.id===state.myPlayerId?'You':r.name,
+        pct:r.territory, color:P_COLORS_CSS[r.colorIndex-1]||'#999',
+        isMe:r.id===state.myPlayerId,
+    })));
 }
 
-function showConnStatus(text, isError = false, isConnected = false) {
-    const el = document.getElementById('conn-status');
-    el.textContent = text;
-    el.className = isError ? 'error' : isConnected ? 'connected' : '';
+function showConnStatus(text, isError=false, isConnected=false) {
+    const el=document.getElementById('conn-status');
+    el.textContent=text; el.className=isError?'error':isConnected?'connected':'';
 }
 
-// ─── Game Loop ────────────────────────────────────────────
+// ─── GAME LOOP (single unified rAF) ───────────────────────
 const clock = new THREE.Clock();
+let _lastStarT = performance.now();
 renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
-    if (state.current === GS.PLAYING && state.mode === 'solo') updateSoloGame(dt);
+    const now = performance.now();
+    // Game logic
+    if (state.current===GS.PLAYING && state.mode==='solo') updateSoloGame(dt);
+    updateCellAnims(dt);
+    updateAvatarCrystals(dt);
+    updateCrystalParticles(dt);
+    updateGoldParticles(dt);
+    // Fire particles (pooled)
+    updateFireParticles(dt);
+    // Background effects (was separate rAF loops)
+    updateStarfield((now-_lastStarT)/1000, now);
+    _lastStarT = now;
+    updateGalaxy();
+    // Render
     renderer.render(scene, camera);
 });
 
-// ─── Resize ───────────────────────────────────────────────
+// ─── RESIZE ────────────────────────────────────────────────
 function onResize() {
     const w=gc.clientWidth, h=gc.clientHeight;
-    aspect = w/h;
+    aspect=w/h;
+    const padded=gridTotal*1.15;
+    camH=Math.max(gridTotal*1.5, padded/aspect);
     camera.left=-camH*aspect/2; camera.right=camH*aspect/2;
+    camera.top=camH/2; camera.bottom=-camH/2;
     camera.updateProjectionMatrix();
     renderer.setSize(w,h);
+
+    const boardFracH = gridTotal / camH;
+    const boardFracW = gridTotal / (camH * aspect);
+    const boardTopPct = (1 - boardFracH) / 2 * 100;
+    const boardBotPct = (1 + boardFracH) / 2 * 100;
+    const boardLeftPct = (1 - boardFracW) / 2 * 100;
+
+    gc.style.setProperty('--hud-top', Math.max(boardTopPct - 7, 1) + '%');
+    gc.style.setProperty('--ink-top', Math.min(boardBotPct + 3, 92) + '%');
+    gc.style.setProperty('--board-left', Math.max(boardLeftPct - 1, 0) + '%');
+    gc.style.setProperty('--board-right', Math.max(boardLeftPct - 1, 0) + '%');
 }
 window.addEventListener('resize', onResize);
-document.addEventListener('visibilitychange', () => { if(document.hidden) actx.suspend(); else actx.resume(); });
+onResize();
 
-// Enter key for room code input
-document.getElementById('room-code-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') window._joinRoom();
-});
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ actx.suspend(); Analytics.event('tab_hidden'); } else { actx.resume(); Analytics.event('tab_visible'); } });
+document.getElementById('room-code-input')?.addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(); });
 
-// Hide grid on start
-boardBg.visible = false;
-borderMesh.visible = false;
-
-// ─── Button Bindings (addEventListener for mobile reliability) ──
+// ─── BUTTON BINDINGS ───────────────────────────────────────
 function bindBtn(id, fn) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('click', e=>{ e.stopPropagation(); sfx.btnClick(); fn(); });
+    // Hover: add crystal07 indicator + sound
+    const hoverIn=()=>{ sfx.wallPlace(); el.classList.add('hovered'); };
+    const hoverOut=()=>{ el.classList.remove('hovered'); };
+    el.addEventListener('mouseenter', hoverIn);
+    el.addEventListener('mouseleave', hoverOut);
+    el.addEventListener('touchstart', e=>{ hoverIn(); setTimeout(hoverOut,300); }, {passive:true});
 }
-bindBtn('btn-quick', () => window._quickPlay());
-bindBtn('btn-solo', () => window._startSolo());
-bindBtn('btn-friends', () => window._showFriends());
-bindBtn('btn-cancel-match', () => window._cancelMatch());
-bindBtn('btn-join', () => window._joinRoom());
-bindBtn('btn-create', () => window._createRoom());
-bindBtn('btn-friends-back', () => setScreen('menu'));
-bindBtn('start-btn', () => window._requestStart());
-bindBtn('btn-leave', () => window._leaveRoom());
-bindBtn('retry-btn', () => window._retry());
-bindBtn('btn-menu', () => window._backToMenu());
+bindBtn('btn-quick', ()=>quickPlay());
+bindBtn('btn-solo', ()=>startSolo());
+bindBtn('btn-friends', ()=>showFriends());
+bindBtn('btn-cancel-match', ()=>cancelMatch());
+bindBtn('btn-join', ()=>joinRoom());
+bindBtn('btn-create', ()=>createRoom());
+bindBtn('btn-friends-back', ()=>setScreen('menu'));
+bindBtn('start-btn', ()=>requestStart());
+bindBtn('btn-leave', ()=>leaveRoom());
+bindBtn('retry-btn', ()=>retry());
+bindBtn('btn-menu', ()=>backToMenu());
+
+// ─── FLOWING STARFIELD (merged into main loop) ────────────
+const _sfStars = [];
+const _sfEl = document.getElementById('starfield');
+function initStars() {
+    _sfEl.innerHTML=''; _sfStars.length=0;
+    for(let i=0;i<BGP.starCount;i++){
+        const s=document.createElement('div'); s.className='star';
+        const sz=(Math.random()>0.85?2.5:Math.random()>0.6?1.5:1)*BGP.starSize;
+        s.style.cssText=`width:${sz}px;height:${sz}px;`;
+        _sfEl.appendChild(s);
+        const angle=Math.random()*Math.PI*2;
+        const speed=(0.2+Math.random()*0.6)*BGP.starSpeed;
+        _sfStars.push({ el:s, x:Math.random()*100, y:Math.random()*100, sz,
+            vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+            phase:Math.random()*Math.PI*2, twinkleSpeed:1.5+Math.random()*3,
+            baseOpacity:0.15+Math.random()*0.45 });
+    }
+}
+initStars();
+function updateStarfield(dt, now) {
+    const t=now/1000;
+    for(const s of _sfStars){
+        s.x+=(s.vx*BGP.starSpeed)*dt+Math.sin(t*0.3+s.phase)*0.02;
+        s.y+=(s.vy*BGP.starSpeed)*dt+Math.cos(t*0.25+s.phase)*0.02;
+        if(s.x>101) s.x=-1; if(s.x<-1) s.x=101;
+        if(s.y>101) s.y=-1; if(s.y<-1) s.y=101;
+        const op=s.baseOpacity*BGP.starOpacity*(0.5+0.5*Math.sin(t*s.twinkleSpeed+s.phase));
+        s.el.style.transform=`translate(${s.x}vw,${s.y}vh)`;
+        s.el.style.opacity=Math.min(op,1).toFixed(2);
+    }
+}
+
+// ─── FLOWING GALAXY (merged into main loop, 1/3 frame rate) ─
+const _gxCanvas = document.getElementById('galaxy-canvas');
+const _gxCtx = _gxCanvas.getContext('2d');
+let _gxW, _gxH;
+function _gxResize(){ _gxW=_gxCanvas.width=window.innerWidth; _gxH=_gxCanvas.height=window.innerHeight; }
+_gxResize(); window.addEventListener('resize', _gxResize);
+const _gxBlobs = [
+    {x:0.3,y:0.2,r:0.4,sx:0.08,sy:0.05,cr:40,cg:20,cb:160,phase:0},
+    {x:0.7,y:0.7,r:0.35,sx:-0.06,sy:0.07,cr:100,cg:30,cb:180,phase:2},
+    {x:0.5,y:0.5,r:0.5,sx:0.04,sy:-0.03,cr:20,cg:15,cb:120,phase:4},
+    {x:0.2,y:0.8,r:0.3,sx:0.05,sy:-0.06,cr:80,cg:10,cb:140,phase:1},
+    {x:0.8,y:0.3,r:0.25,sx:-0.07,sy:0.04,cr:50,cg:25,cb:200,phase:3},
+];
+let _gxT = 0, _gxFrame = 0;
+function updateGalaxy() {
+    _gxFrame++;
+    if (_gxFrame % 3 !== 0) return; // only redraw every 3rd frame
+    _gxT += BGP.galaxySpeed * 3; // compensate for skipped frames
+    _gxCanvas.style.opacity = BGP.galaxyOpacity;
+    _gxCtx.clearRect(0, 0, _gxW, _gxH);
+    _gxCtx.globalCompositeOperation = 'lighter';
+    for (const b of _gxBlobs) {
+        const bx = (b.x + Math.sin(_gxT*b.sx+b.phase)*0.15)*_gxW;
+        const by = (b.y + Math.cos(_gxT*b.sy+b.phase)*0.12)*_gxH;
+        const br = b.r*Math.min(_gxW,_gxH)*(0.9+Math.sin(_gxT*0.5+b.phase)*0.1);
+        const g = _gxCtx.createRadialGradient(bx,by,0,bx,by,br);
+        g.addColorStop(0,`rgba(${b.cr},${b.cg},${b.cb},0.4)`);
+        g.addColorStop(0.4,`rgba(${b.cr},${b.cg},${b.cb},0.15)`);
+        g.addColorStop(1,'rgba(0,0,0,0)');
+        _gxCtx.fillStyle = g; _gxCtx.fillRect(0,0,_gxW,_gxH);
+    }
+    _gxCtx.globalCompositeOperation = 'source-over';
+}
+
+// Tuning panel removed (was disabled). Use ?tuning=1 to re-enable if needed.
 
 </script>
 </body>

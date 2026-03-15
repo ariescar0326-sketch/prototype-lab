@@ -7,7 +7,7 @@
  *   2. posts/NNN-{slug}.html — 每款遊戲的 Dev Log 頁面
  *
  * 用法:
- *   node build-blog.js                  # 產出到 templates/blog/
+ *   node build-blog.js                  # 產出到 infra/blog/
  *   node build-blog.js --out ./dist     # 產出到自訂路徑
  *
  * Pipeline 整合: STEP 12.3 自動執行
@@ -35,30 +35,39 @@ mkdirSync(join(outDir, 'posts'), { recursive: true });
 // ─── HTML helpers ───
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// ─── Cover media helper ───
+// Supports: og-image.png (static), cover.gif/cover.webp (animated), cover.mp4 (video)
+// Priority: cover.mp4 > cover.webp > cover.gif > og-image.png
+// games.json can specify "cover": "cover.mp4" etc. Default: og-image.png
+function coverHtml(g) {
+    const cover = g.cover || 'og-image.png';
+    const ext = cover.split('.').pop().toLowerCase();
+    if (ext === 'mp4' || ext === 'webm') {
+        return `<video src="/games/${g.repo}/${cover}" autoplay loop muted playsinline loading="lazy"></video>`;
+    }
+    return `<img src="/games/${g.repo}/${cover}" alt="${esc(g.name)}" loading="lazy">`;
+}
+
 // ─── Index page ───
 function buildIndex(games) {
     const cards = games
         .sort((a, b) => b.number - a.number)  // newest first
-        .map(g => `
-            <!-- Game ${String(g.number).padStart(3, '0')} -->
+        .map(g => {
+            const num = String(g.number).padStart(3, '0');
+            return `
+            <!-- Game ${num} -->
             <div class="game-card">
-                <a class="cover-link" href="/games/${g.repo}/">
-                    <img src="/games/${g.repo}/og-image.png" alt="${esc(g.name)}" loading="lazy">
-                    <div class="play-overlay">
-                        <div class="play-icon">▶</div>
-                    </div>
+                <a class="cover-wrap" href="/games/${g.repo}/">
+                    ${coverHtml(g)}
+                    <div class="cover-overlay"></div>
+                    <span class="cover-title">${esc(g.name)}</span>
                 </a>
-                <div class="card-body">
-                    <div class="card-info">
-                        <h2>#${String(g.number).padStart(3, '0')} ${esc(g.name)}</h2>
-                        <p>${esc(g.tagline)}</p>
-                        <div class="tags">
-                            ${g.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('\n                            ')}
-                        </div>
-                    </div>
-                    <a href="/posts/${String(g.number).padStart(3, '0')}-${g.slug}.html" class="btn-log">Log</a>
+                <div class="card-actions">
+                    <a href="/games/${g.repo}/" class="btn-play">▶ PLAY</a>
+                    <a href="/posts/${num}-${g.slug}.html" class="btn-devlog">DevLog</a>
                 </div>
-            </div>`).join('\n');
+            </div>`;
+        }).join('\n');
 
     const newestRepo = games.sort((a, b) => b.number - a.number)[0]?.repo || '';
 
@@ -76,70 +85,114 @@ function buildIndex(games) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a; color: #e0e0e0; line-height: 1.6;
+            background: #121220; color: #e0e0e0; line-height: 1.6;
             -webkit-tap-highlight-color: transparent;
         }
-        .container { max-width: 480px; margin: 0 auto; padding: 1rem; }
-        header { text-align: center; padding: 1.5rem 0 1rem; }
-        h1 { font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem; }
-        .subtitle { color: #666; font-size: 0.8rem; }
-        .subtitle a { color: #888; text-decoration: none; }
-        .game-card {
-            background: #111; border-radius: 16px; overflow: hidden;
-            margin-bottom: 1.2rem; border: 1px solid #1a1a1a;
-            transition: transform 0.15s, border-color 0.2s;
+        .container { max-width: 480px; margin: 0 auto; padding: 0 0.8rem; }
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(18, 18, 32, 0.88);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            text-align: center;
+            padding: 0.8rem 0 0.7rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .game-card:hover { border-color: #333; }
+        h1 { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; margin-bottom: 0.35rem; }
+        .kofi-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.82rem; font-weight: 600; color: #fff; text-decoration: none;
+            padding: 0.38rem 1rem; border-radius: 20px;
+            background: #ff5e5b;
+            transition: background 0.2s, transform 0.12s;
+            cursor: pointer; user-select: none; border: none; white-space: nowrap;
+        }
+        .kofi-btn:hover { background: #e84e4b; transform: scale(1.03); }
+        .kofi-btn:active { transform: scale(0.97); }
+        .kofi-btn.active { background: #cc4a48; }
+        .kofi-mobile { display: inline-flex; }
+        .kofi-desktop { display: none; }
+        .kofi-panel {
+            display: none; max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease; opacity: 0;
+        }
+        .kofi-panel.open { max-height: 750px; opacity: 1; }
+        .kofi-panel iframe { border: none; width: 100%; height: 712px; background: transparent; display: block; }
+        @media (min-width: 768px) {
+            .container { max-width: 560px; padding: 0 1.2rem; }
+            .kofi-mobile { display: none; }
+            .kofi-desktop { display: inline-flex; }
+            .kofi-panel { display: block; }
+        }
+        main { padding-top: 0.8rem; }
+        .game-card {
+            position: relative; border-radius: 14px; overflow: hidden;
+            margin-bottom: 0.8rem; background: #1a1a30;
+            transition: transform 0.15s, box-shadow 0.25s;
+        }
+        .game-card:hover { box-shadow: 0 6px 28px rgba(99, 102, 241, 0.15); }
         .game-card:active { transform: scale(0.98); }
-        .cover-link {
+        .cover-wrap {
             display: block; position: relative; overflow: hidden;
             aspect-ratio: 16/9; cursor: pointer;
         }
-        .cover-link img {
+        .cover-wrap img, .cover-wrap video {
             width: 100%; height: 100%; object-fit: cover; display: block;
-            transition: transform 0.3s;
+            transition: transform 0.4s ease;
         }
-        .cover-link:hover img { transform: scale(1.03); }
-        .play-overlay {
+        .game-card:hover .cover-wrap img,
+        .game-card:hover .cover-wrap video { transform: scale(1.04); }
+        .cover-overlay {
             position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(18,18,32,0) 20%, rgba(18,18,32,0.3) 50%, rgba(18,18,32,0.85) 100%);
+            pointer-events: none;
+        }
+        .cover-title {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 1.3rem; font-weight: 800; color: #fff;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.7), 0 0 40px rgba(0,0,0,0.4);
+            text-align: center; letter-spacing: 0.01em; line-height: 1.2;
+            pointer-events: none; z-index: 2; width: 80%;
+        }
+        .card-actions {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 0 0.7rem 0.6rem;
+            display: flex; align-items: flex-end; justify-content: space-between; z-index: 3;
+        }
+        .btn-play {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 0.45rem 1.2rem; border-radius: 22px;
+            font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em;
+            color: #fff; text-decoration: none;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 2px 14px rgba(34,197,94,0.4);
+            transition: transform 0.12s, box-shadow 0.2s; white-space: nowrap;
+        }
+        .btn-play:hover { transform: scale(1.06); box-shadow: 0 4px 22px rgba(34,197,94,0.55); }
+        .btn-play:active { transform: scale(0.96); }
+        .btn-devlog {
+            padding: 0.25rem 0.55rem; border-radius: 6px;
+            font-size: 0.62rem; font-weight: 600;
+            color: rgba(255,255,255,0.35); text-decoration: none;
+            background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+            transition: color 0.2s, background 0.2s;
+        }
+        .btn-devlog:hover { color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.55); }
+        footer {
+            display: flex; justify-content: center; align-items: center;
+            gap: 0.8rem; padding: 1.2rem 0 1.8rem;
+        }
+        .social-icon {
             display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.25); transition: background 0.2s;
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+            transition: background 0.2s, border-color 0.2s;
         }
-        .cover-link:hover .play-overlay { background: rgba(0,0,0,0.15); }
-        .play-icon {
-            width: 64px; height: 64px; border-radius: 50%;
-            background: rgba(37, 99, 235, 0.9); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; color: #fff; padding-left: 4px;
-            box-shadow: 0 4px 24px rgba(37, 99, 235, 0.4);
-            transition: transform 0.2s, background 0.2s;
-        }
-        .cover-link:hover .play-icon { transform: scale(1.1); background: rgba(59, 130, 246, 0.95); }
-        .card-body {
-            padding: 0.8rem 1rem 1rem;
-            display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
-        }
-        .card-info { flex: 1; min-width: 0; }
-        .card-info h2 { font-size: 1rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-info p { font-size: 0.78rem; color: #777; margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .btn-log {
-            flex-shrink: 0; padding: 0.4rem 0.8rem; border-radius: 8px;
-            font-size: 0.75rem; font-weight: 600; color: #888; text-decoration: none;
-            background: #1a1a1a; border: 1px solid #2a2a2a;
-            transition: color 0.2s, border-color 0.2s;
-        }
-        .btn-log:hover { color: #ccc; border-color: #444; }
-        .tags { display: flex; gap: 0.4rem; margin-top: 0.3rem; flex-wrap: wrap; }
-        .tag {
-            font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 4px;
-            background: #1a1a1a; color: #666; border: 1px solid #222;
-        }
-        footer { text-align: center; padding: 1.5rem 0; color: #444; font-size: 0.7rem; }
-        footer a { color: #666; text-decoration: none; }
-        footer a:hover { color: #aaa; }
+        .social-icon:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+        .social-icon svg { width: 15px; height: 15px; fill: rgba(255,255,255,0.4); }
+        .social-icon:hover svg { fill: #fff; }
         @media (min-width: 600px) {
-            .container { max-width: 560px; padding: 1.5rem; }
-            .play-icon { width: 72px; height: 72px; font-size: 1.8rem; }
+            .cover-title { font-size: 1.5rem; }
+            .btn-play { padding: 0.5rem 1.4rem; font-size: 0.88rem; }
         }
     </style>
 </head>
@@ -147,16 +200,37 @@ function buildIndex(games) {
     <div class="container">
         <header>
             <h1>Prototype Lab</h1>
-            <p class="subtitle">3D browser games — play instantly · by <a href="https://linktr.ee/ariescar0326">Ariescar</a></p>
+            <a href="https://ko-fi.com/ariescar" target="_blank" class="kofi-btn kofi-mobile">☕ Buy me a coffee</a>
+            <span class="kofi-btn kofi-desktop" id="kofiToggle" onclick="toggleKofi()">☕ Buy me a coffee</span>
+            <div class="kofi-panel" id="kofiPanel">
+                <iframe src="https://ko-fi.com/ariescar/?hidefeed=true&widget=true&embed=true&preview=true"
+                    title="Support Ariescar on Ko-fi"></iframe>
+            </div>
         </header>
 
         <main>${cards}
         </main>
 
         <footer>
-            <p><a href="https://x.com/AriescarTu">@AriescarTu</a> · <a href="https://linktr.ee/ariescar0326">linktr.ee</a></p>
+            <a href="https://x.com/AriescarTu" target="_blank" class="social-icon" title="X">
+                <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="https://linktr.ee/ariescar0326" target="_blank" class="social-icon" title="Linktree">
+                <svg viewBox="0 0 24 24"><path d="M7.953 15.066l-.038-4.044 4.044-.038.038 4.044zm8.13-4.044l-4.044.038.038 4.044 4.044-.038zM7.916 7.178L12 3.094l4.084 4.084-4.084 4.084zM12 20.906l-4.084-4.084 4.084-4.084 4.084 4.084z"/></svg>
+            </a>
+            <a href="https://ko-fi.com/ariescar" target="_blank" class="social-icon" title="Ko-fi">
+                <svg viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.059-4.011 3.059s-.591-.583-1.189-1.195l-.021-.019c-1.193-1.193-1.339-2.383-.768-3.327.547-.904 1.664-1.34 2.629-1.34 1.157 0 2.279.687 2.768 1.397.851-.702 1.636-1.397 2.768-1.397.964 0 2.082.436 2.629 1.34.571.944.425 2.134-.768 3.327-.597.612-1.189 1.195-1.189 1.195s-2.765-1.606-4.011-3.059c-.073-.09.023-.179.073-.09z"/></svg>
+            </a>
         </footer>
     </div>
+    <script>
+        function toggleKofi() {
+            const panel = document.getElementById('kofiPanel');
+            const toggle = document.getElementById('kofiToggle');
+            panel.classList.toggle('open');
+            toggle.classList.toggle('active');
+        }
+    </script>
 </body>
 </html>`;
 }

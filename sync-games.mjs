@@ -9,7 +9,7 @@
  * Usage: node sync-games.mjs
  */
 
-import { readFileSync, existsSync, mkdirSync, cpSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, cpSync, readdirSync, statSync, unlinkSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,6 +35,8 @@ for (const g of games) {
     }
 
     const targetDir = join(gamesDir, g.repo);
+    // Clean target dir first to avoid .git or stale file collisions
+    if (existsSync(targetDir)) rmSync(targetDir, { recursive: true, force: true });
     mkdirSync(targetDir, { recursive: true });
     cpSync(deployPath, targetDir, { recursive: true });
 

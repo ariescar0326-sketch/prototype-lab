@@ -1,22 +1,23 @@
-# Wall Wars — Multiplayer Territory Game
+# Crystal Battle
 
-Draw walls, claim territory, compete with friends in real-time!
+![Crystal Battle](og-image.png)
+
+Draw walls to claim territory in a magical crystal arena. Solo vs AI or real-time multiplayer.
 
 ## How to Play
-- **Create Room** — Get a 4-digit code, share with friends
-- **Join Room** — Enter a friend's room code
-- **Play Solo** — Practice against AI
-
-## Controls
-- Tap/click grid cells to place walls
-- Enclose areas to claim territory
+- Draw walls by dragging on the grid
+- Enclose areas to claim territory via flood-fill
 - Player with most territory when time runs out wins!
 
-## Tech
-- Three.js + Cloudflare Workers + Durable Objects
-- 2-4 players real-time via WebSocket
+## Controls
+- **Mobile:** Touch and drag to draw walls
+- **Desktop:** Click and drag to draw walls
 
-## Deploy URLs
+## Tech
+- Three.js r160 (single HTML file)
+- Cloudflare Workers + Durable Objects for multiplayer
+
+## URLs
 - GitHub Pages: https://ariescar0326-sketch.github.io/prototype008-wallwars/
 - Netlify Blog: https://ariescar.netlify.app/
 - Multiplayer Server: https://prototype-multiplayer.ariescar0326.workers.dev
