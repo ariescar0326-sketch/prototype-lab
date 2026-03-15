@@ -18,9 +18,9 @@
     <meta name="twitter:site" content="@AriescarTu">
     <meta name="twitter:creator" content="@AriescarTu">
     <meta name="google-site-verification" content="ZLlk78BTZ0Cq8LxSjUvbsJpfHSWkOzoBVVd9jhkDBf4" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Territory Conquest","description":"4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.","url":"https://ariescar.netlify.app/games/prototype006-territory/","image":"https://ariescar.netlify.app/games/prototype006-territory/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"4 players, Three.js, GLTF"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Territory Conquest","description":"4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.","url":"https://ariescar.netlify.app/games/prototype006-territory/","image":"https://ariescar.netlify.app/games/prototype006-territory/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"4 players, Three.js"}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #003 Territory Conquest","description":"4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.","image":"https://ariescar.netlify.app/games/prototype006-territory/og-image.png","url":"https://ariescar.netlify.app/posts/003-territory.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/003-territory.html"}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Territory Conquest handle flood fill at scale?","acceptedAnswer":{"@type":"Answer","text":"200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps."}},{"@type":"Question","name":"How does Territory Conquest handle influence map ai?","acceptedAnswer":{"@type":"Answer","text":"Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner."}},{"@type":"Question","name":"How does Territory Conquest handle procedural audio?","acceptedAnswer":{"@type":"Answer","text":"23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies."}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Territory Conquest handle 40,000 cells and a frame rate problem?","acceptedAnswer":{"@type":"Answer","text":"Flood fill over a 200x200 grid means potentially visiting 40,000 cells. Running that every frame was an instant slideshow on phones. The fix was incremental BFS — instead of finishing the whole fill in one go, I process a fixed budget of cells per frame (around 500) and spread the rest across the next few frames. Visually the territory fills in over 3-4 frames instead of 1, but at 60fps that's 50-70ms, nobody notices. Honestly this was the hardest performance problem across all the prototypes so far."}},{"@type":"Question","name":"How does Territory Conquest handle making ai not stupid (and not too smart)?","acceptedAnswer":{"@type":"Answer","text":"First version of AI just moved randomly. Terrible. Second version beelined for the nearest unclaimed territory. Better, but all 3 AI would pile into the same corner and ignore everything else. Final version uses a downsampled 50x50 influence grid that factors in enemy proximity, unclaimed value, and distance from home base. Each faction weighs these differently so they spread out naturally. Took like 4 iterations to get something that felt like \"challenging but beatable\" instead of either braindead or omniscient."}},{"@type":"Question","name":"How does Territory Conquest handle mobile audio autoplay is a nightmare?","acceptedAnswer":{"@type":"Answer","text":"Browsers block audio playback until user interaction. Fair enough. But the rules are absurdly inconsistent — some browsers want a click, some accept a touch, iOS Safari requires it to be inside a specific event handler scope. Ended up registering click, touchstart, touchend, and keydown listeners that all call AudioContext.resume() on first trigger then remove themselves. It works, but it took way too many test cycles on different devices to get right. Would love to know why browsers can't just agree on one policy."}}]}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -49,17 +49,22 @@
         }
         .play-btn:hover { background: #3b82f6; color: #fff; }
         .play-btn:active { transform: scale(0.96); }
-        .game-embed {
-            margin: 2rem auto; border-radius: 12px; overflow: hidden;
-            border: 1px solid #222; background: #000;
-            max-width: 390px;
+        .play-cover {
+            display: block; position: relative; margin: 2rem auto;
+            border-radius: 12px; overflow: hidden; border: 1px solid #222;
         }
-        .game-embed iframe {
-            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        .play-cover img {
+            width: 100%; display: block;
         }
-        .game-embed-note {
-            text-align: center; padding: 0.6rem; background: #111;
-            font-size: 0.75rem; color: #555;
+        .play-cover-overlay {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); transition: background 0.2s;
+        }
+        .play-cover:hover .play-cover-overlay { background: rgba(0,0,0,0.15); }
+        .play-cover-overlay span {
+            font-size: 1.4rem; font-weight: 700; color: #fff;
+            background: rgba(34,197,94,0.9); padding: 0.6rem 2rem; border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.4);
         }
         article { margin-top: 2rem; }
         article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
@@ -73,8 +78,6 @@
         @media (max-width: 480px) {
             .container { padding: 1.2rem 1rem; }
             .hero h1 { font-size: 1.3rem; }
-            .game-embed { max-width: none; }
-            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
         }
     </style>
 </head>
@@ -95,31 +98,31 @@
             </ul>
         </div>
 
-        <!-- Game embed -->
-        <div class="game-embed">
-            <iframe src="/games/prototype006-territory/" loading="lazy" allow="autoplay"></iframe>
-            <div class="game-embed-note">Best on mobile — <a href="/games/prototype006-territory/">Open fullscreen</a></div>
-        </div>
+        <!-- Play link with cover -->
+        <a href="/games/prototype006-territory/" class="play-cover">
+            <img src="/games/prototype006-territory/og-image.png" alt="Territory Conquest gameplay" loading="lazy">
+            <div class="play-cover-overlay"><span>▶ PLAY</span></div>
+        </a>
 
         <article>
             <h2>Design Notes</h2>
-            <p>Prototype #006 — A paper.io-style territory conquest game.</p>
-            <p>The core loop is simple: drag your hero to paint tiles, return home to claim enclosed land. But with 4 factions fighting over a 200x200 grid, simple becomes chaotic fast.</p>
-            <p>The roguelike skill system was originally 3 paths (Attack, Commander, Speed) with 3 tiers each. Simplified to Attack-only for a tighter experience — Blade Rush for melee cleave, Shotgun for ranged spread, Bomber for area denial with fire trails.</p>
-            <p>All 23 sound effects are procedurally generated via Web Audio API oscillators and noise. No audio files loaded at all — the entire game is a single HTML file with GLTF models.</p>
+            <p>Prototype #006 — inspired by paper.io but with a roguelike twist. You control a hero on a grid, drag to paint tiles, and when you form a closed loop back to your territory, everything inside gets claimed. Simple concept, absolute chaos with 4 factions.</p>
+            <p>The grid is huge — 200x200, which is 40,000 cells. This turned out to be both the fun part and the performance nightmare (more on that in the dev log). The map size means there's always space to expand, so games don't turn into stalemates as easily as smaller grids would.</p>
+            <p>Originally designed a full roguelike skill tree: 3 paths (Attack, Commander, Speed) with 3 tiers each, so 9 possible upgrades. Playtested it for a day and realized nobody ever picked Commander or Speed. Everyone just wanted to hit things harder. So I cut it down to Attack-only with 3 flavors: Blade Rush for a wide melee sweep, Shotgun for ranged spread shots, and Bomber that drops fire trails behind you. Simpler, but way more fun.</p>
+            <p>All 23 sound effects are generated in code using Web Audio API — oscillators, noise generators, FM synthesis. Zero audio files. This was partly an experiment (can you make a game sound decent without any assets?) and partly practical (fewer files = faster load). The answer to the first question is: sort of. It sounds retro and crunchy, which fits the vibe. A full version would probably want real audio for bigger moments like captures and skill activations.</p>
 
             <hr>
 
             <h2>Dev Log</h2>
             
-            <h3>Flood fill at scale</h3>
-            <p>200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps.</p>
+            <h3>40,000 cells and a frame rate problem</h3>
+            <p>Flood fill over a 200x200 grid means potentially visiting 40,000 cells. Running that every frame was an instant slideshow on phones. The fix was incremental BFS — instead of finishing the whole fill in one go, I process a fixed budget of cells per frame (around 500) and spread the rest across the next few frames. Visually the territory fills in over 3-4 frames instead of 1, but at 60fps that's 50-70ms, nobody notices. Honestly this was the hardest performance problem across all the prototypes so far.</p>
 
-            <h3>Influence map AI</h3>
-            <p>Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner.</p>
+            <h3>Making AI not stupid (and not too smart)</h3>
+            <p>First version of AI just moved randomly. Terrible. Second version beelined for the nearest unclaimed territory. Better, but all 3 AI would pile into the same corner and ignore everything else. Final version uses a downsampled 50x50 influence grid that factors in enemy proximity, unclaimed value, and distance from home base. Each faction weighs these differently so they spread out naturally. Took like 4 iterations to get something that felt like &quot;challenging but beatable&quot; instead of either braindead or omniscient.</p>
 
-            <h3>Procedural audio</h3>
-            <p>23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies.</p>
+            <h3>Mobile audio autoplay is a nightmare</h3>
+            <p>Browsers block audio playback until user interaction. Fair enough. But the rules are absurdly inconsistent — some browsers want a click, some accept a touch, iOS Safari requires it to be inside a specific event handler scope. Ended up registering click, touchstart, touchend, and keydown listeners that all call AudioContext.resume() on first trigger then remove themselves. It works, but it took way too many test cycles on different devices to get right. Would love to know why browsers can't just agree on one policy.</p>
 
             <hr>
 

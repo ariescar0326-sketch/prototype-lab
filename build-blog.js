@@ -414,17 +414,22 @@ function buildPost(g) {
         }
         .play-btn:hover { background: #3b82f6; color: #fff; }
         .play-btn:active { transform: scale(0.96); }
-        .game-embed {
-            margin: 2rem auto; border-radius: 12px; overflow: hidden;
-            border: 1px solid #222; background: #000;
-            max-width: 390px;
+        .play-cover {
+            display: block; position: relative; margin: 2rem auto;
+            border-radius: 12px; overflow: hidden; border: 1px solid #222;
         }
-        .game-embed iframe {
-            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        .play-cover img {
+            width: 100%; display: block;
         }
-        .game-embed-note {
-            text-align: center; padding: 0.6rem; background: #111;
-            font-size: 0.75rem; color: #555;
+        .play-cover-overlay {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); transition: background 0.2s;
+        }
+        .play-cover:hover .play-cover-overlay { background: rgba(0,0,0,0.15); }
+        .play-cover-overlay span {
+            font-size: 1.4rem; font-weight: 700; color: #fff;
+            background: rgba(34,197,94,0.9); padding: 0.6rem 2rem; border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.4);
         }
         article { margin-top: 2rem; }
         article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
@@ -438,8 +443,6 @@ function buildPost(g) {
         @media (max-width: 480px) {
             .container { padding: 1.2rem 1rem; }
             .hero h1 { font-size: 1.3rem; }
-            .game-embed { max-width: none; }
-            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
         }
     </style>
 </head>
@@ -457,11 +460,11 @@ ${features}
             </ul>
         </div>
 
-        <!-- Game embed -->
-        <div class="game-embed">
-            <iframe src="/games/${g.repo}/" loading="lazy" allow="autoplay"></iframe>
-            <div class="game-embed-note">Best on mobile — <a href="/games/${g.repo}/">Open fullscreen</a></div>
-        </div>
+        <!-- Play link with cover -->
+        <a href="/games/${g.repo}/" class="play-cover">
+            <img src="/games/${g.repo}/og-image.png" alt="${esc(g.name)} gameplay" loading="lazy">
+            <div class="play-cover-overlay"><span>▶ PLAY</span></div>
+        </a>
 
         <article>
             <h2>Design Notes</h2>
@@ -474,8 +477,8 @@ ${features}
 
             <hr>
 
-            <h2>Credits</h2>
-            <p>3D models by <a href="https://quaternius.com/" target="_blank" rel="noopener">@quaternius</a></p>
+            ${(g.credits && g.credits.length) ? `<h2>Credits</h2>
+            ${g.credits.map(c => `<p>${esc(c.role)} by <a href="${c.url}" target="_blank" rel="noopener">${esc(c.name)}</a></p>`).join('\n            ')}` : ''}
 
             <p style="margin-top: 1.5rem;">
                 <a href="${gameUrl}" class="play-btn">▶ Play ${esc(g.name)}</a>
@@ -569,7 +572,7 @@ Key technical features across all games:
 - GLTF 3D models with skeletal animation
 - Procedural audio via Web Audio API (zero audio files)
 - Mobile-first 9:16 portrait design
-- Real-time multiplayer via Cloudflare Workers + Durable Objects
+- Real-time multiplayer support
 
 ## Games
 
@@ -582,12 +585,10 @@ ${devLogList}
 ## Technical Stack
 
 - Rendering: Three.js (CDN, ES modules)
-- 3D Assets: GLTF models by @quaternius
+- 3D Assets: GLTF models (credits vary per game)
 - Audio: Web Audio API procedural synthesis
-- Multiplayer: Cloudflare Workers + Durable Objects + WebSocket
-- Hosting: Netlify (blog + games), GitHub Pages (individual repos)
-- Analytics: Google Apps Script + Sheets (anonymous, no cookies)
-- Development: AI-assisted (Claude + Cursor), single-file HTML pattern
+- Hosting: Netlify (blog + games)
+- Development: AI-assisted (Vibe Coding), single-file HTML pattern
 
 ## Contact
 

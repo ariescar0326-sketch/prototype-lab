@@ -20,7 +20,7 @@
     <meta name="google-site-verification" content="ZLlk78BTZ0Cq8LxSjUvbsJpfHSWkOzoBVVd9jhkDBf4" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Monster Slash","description":"3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.","url":"https://ariescar.netlify.app/games/prototype001-monsterslash/","image":"https://ariescar.netlify.app/games/prototype001-monsterslash/og-image.png","playMode":"SinglePlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"Hack & slash, Three.js"}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #001 Monster Slash","description":"3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.","image":"https://ariescar.netlify.app/games/prototype001-monsterslash/og-image.png","url":"https://ariescar.netlify.app/posts/001-monsterslash.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/001-monsterslash.html"}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Monster Slash handle screen shake?","acceptedAnswer":{"@type":"Answer","text":"A small camera offset on hit — just enough for the body to feel it before the eyes notice. Too much and it's nauseating, too little and it's invisible."}},{"@type":"Question","name":"How does Monster Slash handle combo timing?","acceptedAnswer":{"@type":"Answer","text":"Perfect, Good, and Miss tiers. Faster slashes get stricter windows but higher scores. It gives players a goal beyond just killing — slash with precision."}},{"@type":"Question","name":"How does Monster Slash handle what's next?","acceptedAnswer":{"@type":"Answer","text":"There are a few directions being considered for future iterations. Procedural audio is one — having different pitch per combo tier so that chaining Perfects could form a rising scale, letting players \"play\" their own melody through combat. Another idea is rhythm variety through monster types: mixing fast one-hit enemies with precision-based and timing-critical ones to force constant rhythm switching."}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Monster Slash handle the screen shake rabbit hole?","acceptedAnswer":{"@type":"Answer","text":"Spent an embarrassing amount of time tuning screen shake. Started at 10 pixels — way too much, felt like an earthquake. Went down to 1 pixel — couldn't even tell it was there. Ended up at 3px with a 150ms decay. The trick is it needs to hit your body before your brain processes what happened. Sounds dramatic for a silly game but it makes a huge difference."}},{"@type":"Question","name":"How does Monster Slash handle touch input on mobile is cursed?","acceptedAnswer":{"@type":"Answer","text":"Getting swipe detection right on phones was painful. touchmove events fire at different rates depending on the device, so my slash line would sometimes have gaps in it. Had to interpolate between touch points to fill the holes. Also discovered that some Android browsers suppress touchmove if you don't call preventDefault on touchstart, which means your swipe just... doesn't register. No error, nothing. Fun."}},{"@type":"Question","name":"How does Monster Slash handle combo windows and feel?","acceptedAnswer":{"@type":"Answer","text":"The timing windows are 800ms for Miss, 400ms for Good, 200ms for Perfect. I tried making Perfect tighter (100ms) but even I couldn't hit it consistently, and I built the thing. The key insight was that combo multiplier matters more than individual hit scores — it rewards sustained focus over single lucky swipes. Still not sure if the difficulty curve is right, but it feels decent for a prototype."}}]}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -49,17 +49,22 @@
         }
         .play-btn:hover { background: #3b82f6; color: #fff; }
         .play-btn:active { transform: scale(0.96); }
-        .game-embed {
-            margin: 2rem auto; border-radius: 12px; overflow: hidden;
-            border: 1px solid #222; background: #000;
-            max-width: 390px;
+        .play-cover {
+            display: block; position: relative; margin: 2rem auto;
+            border-radius: 12px; overflow: hidden; border: 1px solid #222;
         }
-        .game-embed iframe {
-            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        .play-cover img {
+            width: 100%; display: block;
         }
-        .game-embed-note {
-            text-align: center; padding: 0.6rem; background: #111;
-            font-size: 0.75rem; color: #555;
+        .play-cover-overlay {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); transition: background 0.2s;
+        }
+        .play-cover:hover .play-cover-overlay { background: rgba(0,0,0,0.15); }
+        .play-cover-overlay span {
+            font-size: 1.4rem; font-weight: 700; color: #fff;
+            background: rgba(34,197,94,0.9); padding: 0.6rem 2rem; border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.4);
         }
         article { margin-top: 2rem; }
         article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
@@ -73,8 +78,6 @@
         @media (max-width: 480px) {
             .container { padding: 1.2rem 1rem; }
             .hero h1 { font-size: 1.3rem; }
-            .game-embed { max-width: none; }
-            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
         }
     </style>
 </head>
@@ -95,31 +98,31 @@
             </ul>
         </div>
 
-        <!-- Game embed -->
-        <div class="game-embed">
-            <iframe src="/games/prototype001-monsterslash/" loading="lazy" allow="autoplay"></iframe>
-            <div class="game-embed-note">Best on mobile — <a href="/games/prototype001-monsterslash/">Open fullscreen</a></div>
-        </div>
+        <!-- Play link with cover -->
+        <a href="/games/prototype001-monsterslash/" class="play-cover">
+            <img src="/games/prototype001-monsterslash/og-image.png" alt="Monster Slash gameplay" loading="lazy">
+            <div class="play-cover-overlay"><span>▶ PLAY</span></div>
+        </a>
 
         <article>
             <h2>Design Notes</h2>
-            <p>The development goal is to create lightweight games that can be played immediately after being forwarded on a mobile phone.</p>
-            <p>Prototype #001 — First in a series of 3D mobile browser games.</p>
-            <p>The idea started from a simple question: what if Fruit Ninja was 3D and the fruits fought back?</p>
-            <p>Built the slash mechanic first — felt flat. Added screen shake, and it immediately felt better. Then added combo timing where the window gets tighter the higher your streak. It started to feel like a rhythm game. That wasn't planned, but it works.</p>
+            <p>Prototype #001 — the very first one. The goal from day one was: someone sends you a link on LINE or iMessage, you tap it, and you're playing a 3D game within 2 seconds. No app store, no loading screen, no tutorial popup.</p>
+            <p>The idea was basically &quot;what if Fruit Ninja was 3D and the fruits fought back?&quot; Simple pitch. Took way longer to get right than I expected.</p>
+            <p>I built the slash mechanic first and it felt... flat. Like swiping through paper. Then I added screen shake — literally just a 3-pixel camera offset per hit — and suddenly it felt violent. One tiny change. Then combo timing happened by accident: I was testing hit detection speed and noticed fast swipes felt more satisfying, so I added scoring tiers. Perfect, Good, Miss. The tighter the timing window, the higher the score. At some point I realized it was turning into a rhythm game. Wasn't planned at all.</p>
+            <p>If I ever revisit this as a full game: procedural audio would be the big addition. Imagine each combo tier plays a different pitch, so chaining Perfects would create a rising musical scale — you'd literally be composing a melody through combat. Also want to try mixing monster types that force rhythm-switching: fast swarms vs slow tanks vs ones that dodge.</p>
 
             <hr>
 
             <h2>Dev Log</h2>
             
-            <h3>Screen shake</h3>
-            <p>A small camera offset on hit — just enough for the body to feel it before the eyes notice. Too much and it's nauseating, too little and it's invisible.</p>
+            <h3>The screen shake rabbit hole</h3>
+            <p>Spent an embarrassing amount of time tuning screen shake. Started at 10 pixels — way too much, felt like an earthquake. Went down to 1 pixel — couldn't even tell it was there. Ended up at 3px with a 150ms decay. The trick is it needs to hit your body before your brain processes what happened. Sounds dramatic for a silly game but it makes a huge difference.</p>
 
-            <h3>Combo timing</h3>
-            <p>Perfect, Good, and Miss tiers. Faster slashes get stricter windows but higher scores. It gives players a goal beyond just killing — slash with precision.</p>
+            <h3>Touch input on mobile is cursed</h3>
+            <p>Getting swipe detection right on phones was painful. touchmove events fire at different rates depending on the device, so my slash line would sometimes have gaps in it. Had to interpolate between touch points to fill the holes. Also discovered that some Android browsers suppress touchmove if you don't call preventDefault on touchstart, which means your swipe just... doesn't register. No error, nothing. Fun.</p>
 
-            <h3>What's next</h3>
-            <p>There are a few directions being considered for future iterations. Procedural audio is one — having different pitch per combo tier so that chaining Perfects could form a rising scale, letting players &quot;play&quot; their own melody through combat. Another idea is rhythm variety through monster types: mixing fast one-hit enemies with precision-based and timing-critical ones to force constant rhythm switching.</p>
+            <h3>Combo windows and feel</h3>
+            <p>The timing windows are 800ms for Miss, 400ms for Good, 200ms for Perfect. I tried making Perfect tighter (100ms) but even I couldn't hit it consistently, and I built the thing. The key insight was that combo multiplier matters more than individual hit scores — it rewards sustained focus over single lucky swipes. Still not sure if the difficulty curve is right, but it feels decent for a prototype.</p>
 
             <hr>
 

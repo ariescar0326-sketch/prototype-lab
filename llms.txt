@@ -12,31 +12,29 @@ Key technical features across all games:
 - GLTF 3D models with skeletal animation
 - Procedural audio via Web Audio API (zero audio files)
 - Mobile-first 9:16 portrait design
-- Real-time multiplayer via Cloudflare Workers + Durable Objects
+- Real-time multiplayer support
 
 ## Games
 
-- [Wall Wars](https://ariescar.netlify.app/games/prototype008-wallwars/): Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.
+- [Wall Wars](https://ariescar.netlify.app/games/prototype008-wallwars/): Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.
 - [Territory Conquest](https://ariescar.netlify.app/games/prototype006-territory/): 4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.
 - [Sky Roller](https://ariescar.netlify.app/games/prototype002-skyroller/): 7-player ball race on a sky track. Dodge crates, collect buffs, ragdoll physics. Play instantly in your browser.
 - [Monster Slash](https://ariescar.netlify.app/games/prototype001-monsterslash/): 3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.
 
 ## Dev Logs
 
-- [Wall Wars Dev Log](https://ariescar.netlify.app/posts/008-wallwars.html): Durable Object gotcha, WebSocket non-Hibernation, Client-side prediction.
-- [Territory Conquest Dev Log](https://ariescar.netlify.app/posts/003-territory.html): Flood fill at scale, Influence map AI, Procedural audio.
-- [Sky Roller Dev Log](https://ariescar.netlify.app/posts/002-skyroller.html): SkinnedMesh clone trap, Animation binding, What makes it feel right.
-- [Monster Slash Dev Log](https://ariescar.netlify.app/posts/001-monsterslash.html): Screen shake, Combo timing, What's next.
+- [Wall Wars Dev Log](https://ariescar.netlify.app/posts/008-wallwars.html): Syncing game state across players, Ink economy design, Room codes and joining flow.
+- [Territory Conquest Dev Log](https://ariescar.netlify.app/posts/003-territory.html): 40,000 cells and a frame rate problem, Making AI not stupid (and not too smart), Mobile audio autoplay is a nightmare.
+- [Sky Roller Dev Log](https://ariescar.netlify.app/posts/002-skyroller.html): The SkinnedMesh clone disaster, Animation sharing doesn't work, Ragdoll tuning.
+- [Monster Slash Dev Log](https://ariescar.netlify.app/posts/001-monsterslash.html): The screen shake rabbit hole, Touch input on mobile is cursed, Combo windows and feel.
 
 ## Technical Stack
 
 - Rendering: Three.js (CDN, ES modules)
-- 3D Assets: GLTF models by @quaternius
+- 3D Assets: GLTF models (credits vary per game)
 - Audio: Web Audio API procedural synthesis
-- Multiplayer: Cloudflare Workers + Durable Objects + WebSocket
-- Hosting: Netlify (blog + games), GitHub Pages (individual repos)
-- Analytics: Google Apps Script + Sheets (anonymous, no cookies)
-- Development: AI-assisted (Claude + Cursor), single-file HTML pattern
+- Hosting: Netlify (blog + games)
+- Development: AI-assisted (Vibe Coding), single-file HTML pattern
 
 ## Contact
 

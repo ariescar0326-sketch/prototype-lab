@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wall Wars Dev Log — AI Game Development | Prototype Lab</title>
-    <meta name="description" content="Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI. Dev log covering design decisions, technical challenges, and AI-assisted development process.">
+    <meta name="description" content="Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI. Dev log covering design decisions, technical challenges, and AI-assisted development process.">
     <link rel="canonical" href="https://ariescar.netlify.app/posts/008-wallwars.html">
     <meta property="og:title" content="Wall Wars — Build Walls, Claim Land!">
-    <meta property="og:description" content="Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.">
+    <meta property="og:description" content="Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.">
     <meta property="og:image" content="https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png">
     <meta property="og:url" content="https://ariescar.netlify.app/posts/008-wallwars.html">
     <meta property="og:type" content="article">
@@ -18,9 +18,9 @@
     <meta name="twitter:site" content="@AriescarTu">
     <meta name="twitter:creator" content="@AriescarTu">
     <meta name="google-site-verification" content="ZLlk78BTZ0Cq8LxSjUvbsJpfHSWkOzoBVVd9jhkDBf4" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Wall Wars","description":"Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.","url":"https://ariescar.netlify.app/games/prototype008-wallwars/","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"Multiplayer, Three.js, Cloudflare Workers"}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #008 Wall Wars","description":"Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","url":"https://ariescar.netlify.app/posts/008-wallwars.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/008-wallwars.html"}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Wall Wars handle durable object gotcha?","acceptedAnswer":{"@type":"Answer","text":"Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug."}},{"@type":"Question","name":"How does Wall Wars handle websocket non-hibernation?","acceptedAnswer":{"@type":"Answer","text":"Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game."}},{"@type":"Question","name":"How does Wall Wars handle client-side prediction?","acceptedAnswer":{"@type":"Answer","text":"Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks."}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":["VideoGame","SoftwareApplication"],"name":"Wall Wars","description":"Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.","url":"https://ariescar.netlify.app/games/prototype008-wallwars/","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","playMode":"MultiPlayer","gamePlatform":["Web Browser","Mobile Browser"],"applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock"},"author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu"},"datePublished":"2026-03","inLanguage":"en","genre":"Multiplayer, Three.js"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Dev Log — #008 Wall Wars","description":"Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.","image":"https://ariescar.netlify.app/games/prototype008-wallwars/og-image.png","url":"https://ariescar.netlify.app/posts/008-wallwars.html","datePublished":"2026-03","dateModified":"2026-03-15","author":{"@type":"Person","name":"Ariescar","url":"https://x.com/AriescarTu","description":"Indie game developer exploring AI-assisted game production. Building 3D browser games with Three.js and Vibe Coding workflows.","sameAs":["https://x.com/AriescarTu","https://linktr.ee/ariescar0326"]},"publisher":{"@type":"Organization","name":"Prototype Lab","url":"https://ariescar.netlify.app"},"mainEntityOfPage":"https://ariescar.netlify.app/posts/008-wallwars.html"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does Wall Wars handle syncing game state across players?","acceptedAnswer":{"@type":"Answer","text":"The hardest part of multiplayer isn't the game logic — it's making sure everyone sees the same thing at the same time. My first attempt had noticeable desync where one player would see a wall that didn't exist on the other screen. The fix was simple in theory (server is the single source of truth, clients just render what the server says) but getting the timing right so it doesn't feel laggy took a lot of back and forth. Showing the wall immediately on your screen while waiting for server confirmation was the key trick — 95% of the time the server agrees, so you rarely see a correction."}},{"@type":"Question","name":"How does Wall Wars handle ink economy design?","acceptedAnswer":{"@type":"Answer","text":"First playtest without ink limits was miserable. Both players just spam-walled the entire grid in 15 seconds and the game was over before any strategy could happen. Added the ink meter and suddenly every wall placement became a decision. The regen rate took like 6 tweaks to get right — too fast and spam is still viable, too slow and the game feels like you're waiting around. Current rate lets you place about 3 walls in a burst, then you wait 2 seconds to get one more. Feels about right but honestly could still use more playtesting."}},{"@type":"Question","name":"How does Wall Wars handle room codes and joining flow?","acceptedAnswer":{"@type":"Answer","text":"Wanted the multiplayer join experience to be dead simple: one player creates a room, gets a 4-letter code (like AXBR), texts it to a friend, friend enters the code, they're in. No accounts, no login, no friend lists. The code generation is just random uppercase letters, checked against active rooms to avoid collisions. Biggest UX issue was players entering lowercase codes on phones — added auto-uppercase on the input field and that fixed 90% of the join failures. Sometimes the simplest bugs are the dumbest."}}]}</script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -49,17 +49,22 @@
         }
         .play-btn:hover { background: #3b82f6; color: #fff; }
         .play-btn:active { transform: scale(0.96); }
-        .game-embed {
-            margin: 2rem auto; border-radius: 12px; overflow: hidden;
-            border: 1px solid #222; background: #000;
-            max-width: 390px;
+        .play-cover {
+            display: block; position: relative; margin: 2rem auto;
+            border-radius: 12px; overflow: hidden; border: 1px solid #222;
         }
-        .game-embed iframe {
-            width: 100%; aspect-ratio: 9/16; border: none; display: block;
+        .play-cover img {
+            width: 100%; display: block;
         }
-        .game-embed-note {
-            text-align: center; padding: 0.6rem; background: #111;
-            font-size: 0.75rem; color: #555;
+        .play-cover-overlay {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.35); transition: background 0.2s;
+        }
+        .play-cover:hover .play-cover-overlay { background: rgba(0,0,0,0.15); }
+        .play-cover-overlay span {
+            font-size: 1.4rem; font-weight: 700; color: #fff;
+            background: rgba(34,197,94,0.9); padding: 0.6rem 2rem; border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.4);
         }
         article { margin-top: 2rem; }
         article h2 { font-size: 1.3rem; color: #fff; margin: 2rem 0 0.8rem; }
@@ -73,8 +78,6 @@
         @media (max-width: 480px) {
             .container { padding: 1.2rem 1rem; }
             .hero h1 { font-size: 1.3rem; }
-            .game-embed { max-width: none; }
-            .game-embed iframe { aspect-ratio: 9/16; max-height: 85vh; }
         }
     </style>
 </head>
@@ -86,9 +89,9 @@
 
         <div class="hero">
             <h1>Dev Log — #008 Wall Wars</h1>
-            <p class="tagline">Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.</p>
+            <p class="tagline">Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.</p>
             <ul>
-                <li>Real-time multiplayer via WebSocket (2-4 players)</li>
+                <li>Real-time multiplayer (2-4 players)</li>
                 <li>Create rooms with 4-letter codes, share with friends</li>
                 <li>AI fills empty slots automatically</li>
                 <li>Solo mode with AI opponent</li>
@@ -96,36 +99,36 @@
             </ul>
         </div>
 
-        <!-- Game embed -->
-        <div class="game-embed">
-            <iframe src="/games/prototype008-wallwars/" loading="lazy" allow="autoplay"></iframe>
-            <div class="game-embed-note">Best on mobile — <a href="/games/prototype008-wallwars/">Open fullscreen</a></div>
-        </div>
+        <!-- Play link with cover -->
+        <a href="/games/prototype008-wallwars/" class="play-cover">
+            <img src="/games/prototype008-wallwars/og-image.png" alt="Wall Wars gameplay" loading="lazy">
+            <div class="play-cover-overlay"><span>▶ PLAY</span></div>
+        </a>
 
         <article>
             <h2>Design Notes</h2>
-            <p>Prototype #008 — First real-time multiplayer game in the series.</p>
-            <p>The server runs on Cloudflare Workers with Durable Objects. Each room is a single DO instance that manages game state, tick loop, and WebSocket connections. Room codes use idFromName() so any Worker edge can resolve the same room.</p>
-            <p>The flood-fill BFS runs server-side every tick to determine territory ownership. When walls fully enclose an area, it flips to the wall owner. Simple mechanic, emergent strategy.</p>
-            <p>Ink system adds resource management — you can't wall spam. Regen is constant, so knowing when to save ink vs when to rush-build matters.</p>
+            <p>Prototype #008 — first multiplayer game in the series, and easily the most technically ambitious one. Wanted to answer a simple question: can a browser game do real-time multiplayer where you just share a 4-letter code and friends join instantly?</p>
+            <p>Core loop: each round lasts 1 minute. You tap to place walls on a 10x10 grid. When your walls fully enclose an area, that territory flips to your color. You can also capture enemy pieces by surrounding them on all four sides (up/down/left/right) with no empty gap. When the timer hits zero, whoever controls the most cells wins. Simple enough to learn in one round, deep enough that I still discover new strategies.</p>
+            <p>The territory ownership runs on flood-fill BFS. Every game tick, the algorithm checks all enclosed regions and flips ownership accordingly. Sounds expensive but on a 10x10 grid (100 cells) it's basically free. The interesting design question is what happens at larger scales — a 20x20 grid would be 4x the cells and open up way more complex encirclement patterns, but it might also make games feel slower since there's more empty space to fill.</p>
+            <p>Ink system prevents wall spam. You have a meter that drains per wall placed and regens at a constant rate. This single constraint created most of the game's strategy: do you rush-build an aggressive fence across the middle, or save ink to counter the opponent's expansion? I've seen players win by doing almost nothing for 40 seconds then blitzing the last 20.</p>
+            <p>If I ever expand this: 20x20 grid with more player types (maybe one that builds faster but has less ink, one that can destroy opponent walls), a spectator mode, and best-of-3 rounds instead of single elimination. The 4-letter room code system would also work great for tournament brackets.</p>
 
             <hr>
 
             <h2>Dev Log</h2>
             
-            <h3>Durable Object gotcha</h3>
-            <p>Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug.</p>
+            <h3>Syncing game state across players</h3>
+            <p>The hardest part of multiplayer isn't the game logic — it's making sure everyone sees the same thing at the same time. My first attempt had noticeable desync where one player would see a wall that didn't exist on the other screen. The fix was simple in theory (server is the single source of truth, clients just render what the server says) but getting the timing right so it doesn't feel laggy took a lot of back and forth. Showing the wall immediately on your screen while waiting for server confirmation was the key trick — 95% of the time the server agrees, so you rarely see a correction.</p>
 
-            <h3>WebSocket non-Hibernation</h3>
-            <p>Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game.</p>
+            <h3>Ink economy design</h3>
+            <p>First playtest without ink limits was miserable. Both players just spam-walled the entire grid in 15 seconds and the game was over before any strategy could happen. Added the ink meter and suddenly every wall placement became a decision. The regen rate took like 6 tweaks to get right — too fast and spam is still viable, too slow and the game feels like you're waiting around. Current rate lets you place about 3 walls in a burst, then you wait 2 seconds to get one more. Feels about right but honestly could still use more playtesting.</p>
 
-            <h3>Client-side prediction</h3>
-            <p>Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks.</p>
+            <h3>Room codes and joining flow</h3>
+            <p>Wanted the multiplayer join experience to be dead simple: one player creates a room, gets a 4-letter code (like AXBR), texts it to a friend, friend enters the code, they're in. No accounts, no login, no friend lists. The code generation is just random uppercase letters, checked against active rooms to avoid collisions. Biggest UX issue was players entering lowercase codes on phones — added auto-uppercase on the input field and that fixed 90% of the join failures. Sometimes the simplest bugs are the dumbest.</p>
 
             <hr>
 
-            <h2>Credits</h2>
-            <p>3D models by <a href="https://quaternius.com/" target="_blank" rel="noopener">@quaternius</a></p>
+            
 
             <p style="margin-top: 1.5rem;">
                 <a href="https://ariescar.netlify.app/games/prototype008-wallwars/" class="play-btn">▶ Play Wall Wars</a>

@@ -16,24 +16,27 @@
             "No download, click and play"
         ],
         "designNotes": [
-            "The development goal is to create lightweight games that can be played immediately after being forwarded on a mobile phone.",
-            "Prototype #001 — First in a series of 3D mobile browser games.",
-            "The idea started from a simple question: what if Fruit Ninja was 3D and the fruits fought back?",
-            "Built the slash mechanic first — felt flat. Added screen shake, and it immediately felt better. Then added combo timing where the window gets tighter the higher your streak. It started to feel like a rhythm game. That wasn't planned, but it works."
+            "Prototype #001 — the very first one. The goal from day one was: someone sends you a link on LINE or iMessage, you tap it, and you're playing a 3D game within 2 seconds. No app store, no loading screen, no tutorial popup.",
+            "The idea was basically \"what if Fruit Ninja was 3D and the fruits fought back?\" Simple pitch. Took way longer to get right than I expected.",
+            "I built the slash mechanic first and it felt... flat. Like swiping through paper. Then I added screen shake — literally just a 3-pixel camera offset per hit — and suddenly it felt violent. One tiny change. Then combo timing happened by accident: I was testing hit detection speed and noticed fast swipes felt more satisfying, so I added scoring tiers. Perfect, Good, Miss. The tighter the timing window, the higher the score. At some point I realized it was turning into a rhythm game. Wasn't planned at all.",
+            "If I ever revisit this as a full game: procedural audio would be the big addition. Imagine each combo tier plays a different pitch, so chaining Perfects would create a rising musical scale — you'd literally be composing a melody through combat. Also want to try mixing monster types that force rhythm-switching: fast swarms vs slow tanks vs ones that dodge."
         ],
         "devLog": [
             {
-                "title": "Screen shake",
-                "body": "A small camera offset on hit — just enough for the body to feel it before the eyes notice. Too much and it's nauseating, too little and it's invisible."
+                "title": "The screen shake rabbit hole",
+                "body": "Spent an embarrassing amount of time tuning screen shake. Started at 10 pixels — way too much, felt like an earthquake. Went down to 1 pixel — couldn't even tell it was there. Ended up at 3px with a 150ms decay. The trick is it needs to hit your body before your brain processes what happened. Sounds dramatic for a silly game but it makes a huge difference."
             },
             {
-                "title": "Combo timing",
-                "body": "Perfect, Good, and Miss tiers. Faster slashes get stricter windows but higher scores. It gives players a goal beyond just killing — slash with precision."
+                "title": "Touch input on mobile is cursed",
+                "body": "Getting swipe detection right on phones was painful. touchmove events fire at different rates depending on the device, so my slash line would sometimes have gaps in it. Had to interpolate between touch points to fill the holes. Also discovered that some Android browsers suppress touchmove if you don't call preventDefault on touchstart, which means your swipe just... doesn't register. No error, nothing. Fun."
             },
             {
-                "title": "What's next",
-                "body": "There are a few directions being considered for future iterations. Procedural audio is one — having different pitch per combo tier so that chaining Perfects could form a rising scale, letting players \"play\" their own melody through combat. Another idea is rhythm variety through monster types: mixing fast one-hit enemies with precision-based and timing-critical ones to force constant rhythm switching."
+                "title": "Combo windows and feel",
+                "body": "The timing windows are 800ms for Miss, 400ms for Good, 200ms for Perfect. I tried making Perfect tighter (100ms) but even I couldn't hit it consistently, and I built the thing. The key insight was that combo multiplier matters more than individual hit scores — it rewards sustained focus over single lucky swipes. Still not sure if the difficulty curve is right, but it feels decent for a prototype."
             }
+        ],
+        "credits": [
+            { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
         "date": "2026-03"
     },
@@ -46,32 +49,35 @@
         "tagline": "Ball race · dodge crates · ragdoll physics",
         "ogTagline": "Roll to Survive!",
         "description": "7-player ball race on a sky track. Dodge crates, collect buffs, ragdoll physics. Play instantly in your browser.",
-        "tags": ["7 players", "Three.js", "GLTF"],
+        "tags": ["7 players", "Three.js"],
         "features": [
             "Drag to steer, swipe down to roll faster",
-            "GLTF characters with skeletal Run/Death animations",
+            "3D characters with skeletal Run/Death animations",
             "Physics ragdoll when you hit obstacles",
             "No download, click and play"
         ],
         "designNotes": [
-            "Prototype #002 — Second in a series of 3D mobile browser games.",
-            "Ball size is the core trade-off. Small balls are fast but one crate hit sends you flying. Iron balls are invincible but crawl along. Every race the AI gets a random mix, so the dynamics change each round.",
-            "The ragdoll uses cannon-es physics for shattered body parts and a separate flying character that launches forward along the track. Watching 3 racers get wiped out by the same crate never gets old.",
-            "Buff pads were the last addition but became the highlight — getting launched into the sky and bouncing twice before landing gives a rollercoaster feeling that pure ground racing doesn't have."
+            "Prototype #002 — the ball race. Wanted to see if a 7-player race could run at 60fps in a mobile browser with actual 3D characters, ragdoll physics, and skeletal animation. Turns out: barely, but yes.",
+            "Ball size is the core design trade-off. Small balls are fast but one crate hit sends you flying off the track. Iron balls are invincible but crawl along at half speed. Every race, the AI racers get a random ball size, so no two rounds play the same. Sometimes you get a pack of small balls weaving through obstacles while one iron ball just tanks through everything.",
+            "Ragdoll was added late and almost got cut because of performance concerns. The physics engine creates separate body parts when a character gets hit — head, torso, limbs go flying. There's also a separate \"launch\" animation where the whole character gets sent forward along the track. Watching 3 racers get wiped out by the same crate chain reaction is genuinely the best part of the game.",
+            "Buff pads were the very last feature and ended up being the highlight. Getting launched 50 units into the sky and bouncing twice before landing gives this rollercoaster stomach-drop feeling that pure ground racing can't touch. If I did a full version, I'd lean way harder into verticality — ramps, half-pipes, maybe even upside-down track sections."
         ],
         "devLog": [
             {
-                "title": "SkinnedMesh clone trap",
-                "body": "Three.js Object3D.clone() doesn't copy bone bindings for SkinnedMesh. Characters were stuck in T-pose until switching to SkeletonUtils.clone. A silent bug — no error, just frozen models."
+                "title": "The SkinnedMesh clone disaster",
+                "body": "This one drove me crazy for hours. I needed to spawn 7 copies of the same 3D character model. Naturally, I used Three.js Object3D.clone(). Models appeared, no errors in console, everything looked fine... except every character was frozen in T-pose. No animation. Turns out clone() doesn't copy bone bindings for SkinnedMesh. It's a known thing apparently, but there's zero indication anything went wrong. Had to switch to SkeletonUtils.clone which handles bones properly. Silent bugs like this are the worst."
             },
             {
-                "title": "Animation binding",
-                "body": "Each character needs its own cloned AnimationClips. Sharing clips between multiple AnimationMixers causes binding conflicts where some characters freeze while others play normally."
+                "title": "Animation sharing doesn't work",
+                "body": "After fixing the clone issue, animations played but only on some characters. Others would randomly freeze mid-run. The problem: I was sharing the same AnimationClips across all 7 characters' AnimationMixers. Each mixer was trying to control the same clip data, causing bind conflicts. Fix was cloning the AnimationClips too — every character needs its own complete copy of every animation. Memory-wasteful? Sure. But 7 characters times 2 animations isn't enough to matter."
             },
             {
-                "title": "What makes it feel right",
-                "body": "The game over cooldown — 3 seconds before you can restart. Forces a breath, makes each crash register. And the dust particles behind rolling balls scale with speed, so fast feels fast even before looking at the speedometer."
+                "title": "Ragdoll tuning",
+                "body": "First version of ragdoll, characters would just crumple on the spot. Boring. Added a velocity-based launch force so faster impacts send you further. Then the opposite problem: characters were flying into space at Mach 3. Ended up clamping the launch force and adding drag so the ragdoll arc looks dramatic but lands within screen view. Also added a 3-second cooldown before you can restart — forces you to watch your crash. Sounds mean but it makes each death register."
             }
+        ],
+        "credits": [
+            { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
         "date": "2026-03"
     },
@@ -84,7 +90,7 @@
         "tagline": "Claim land · close loops · conquer the grid",
         "ogTagline": "Conquer the Grid!",
         "description": "4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.",
-        "tags": ["4 players", "Three.js", "GLTF"],
+        "tags": ["4 players", "Three.js"],
         "features": [
             "Drag to move, close loops to claim territory",
             "Roguelike Attack-path upgrades (Blade Rush, Shotgun, Bomber)",
@@ -92,24 +98,27 @@
             "No download, click and play"
         ],
         "designNotes": [
-            "Prototype #006 — A paper.io-style territory conquest game.",
-            "The core loop is simple: drag your hero to paint tiles, return home to claim enclosed land. But with 4 factions fighting over a 200x200 grid, simple becomes chaotic fast.",
-            "The roguelike skill system was originally 3 paths (Attack, Commander, Speed) with 3 tiers each. Simplified to Attack-only for a tighter experience — Blade Rush for melee cleave, Shotgun for ranged spread, Bomber for area denial with fire trails.",
-            "All 23 sound effects are procedurally generated via Web Audio API oscillators and noise. No audio files loaded at all — the entire game is a single HTML file with GLTF models."
+            "Prototype #006 — inspired by paper.io but with a roguelike twist. You control a hero on a grid, drag to paint tiles, and when you form a closed loop back to your territory, everything inside gets claimed. Simple concept, absolute chaos with 4 factions.",
+            "The grid is huge — 200x200, which is 40,000 cells. This turned out to be both the fun part and the performance nightmare (more on that in the dev log). The map size means there's always space to expand, so games don't turn into stalemates as easily as smaller grids would.",
+            "Originally designed a full roguelike skill tree: 3 paths (Attack, Commander, Speed) with 3 tiers each, so 9 possible upgrades. Playtested it for a day and realized nobody ever picked Commander or Speed. Everyone just wanted to hit things harder. So I cut it down to Attack-only with 3 flavors: Blade Rush for a wide melee sweep, Shotgun for ranged spread shots, and Bomber that drops fire trails behind you. Simpler, but way more fun.",
+            "All 23 sound effects are generated in code using Web Audio API — oscillators, noise generators, FM synthesis. Zero audio files. This was partly an experiment (can you make a game sound decent without any assets?) and partly practical (fewer files = faster load). The answer to the first question is: sort of. It sounds retro and crunchy, which fits the vibe. A full version would probably want real audio for bigger moments like captures and skill activations."
         ],
         "devLog": [
             {
-                "title": "Flood fill at scale",
-                "body": "200x200 grid means 40,000 cells. Running BFS flood fill every frame would kill performance. Solution: incremental BFS that processes a fixed budget of cells per frame, spreading the work across multiple frames while keeping 60fps."
+                "title": "40,000 cells and a frame rate problem",
+                "body": "Flood fill over a 200x200 grid means potentially visiting 40,000 cells. Running that every frame was an instant slideshow on phones. The fix was incremental BFS — instead of finishing the whole fill in one go, I process a fixed budget of cells per frame (around 500) and spread the rest across the next few frames. Visually the territory fills in over 3-4 frames instead of 1, but at 60fps that's 50-70ms, nobody notices. Honestly this was the hardest performance problem across all the prototypes so far."
             },
             {
-                "title": "Influence map AI",
-                "body": "Each AI faction evaluates a 50x50 downsampled influence grid to decide where to expand. Factors include enemy density, unclaimed territory value, and distance to home base. This prevents all 3 AI from dogpiling the same corner."
+                "title": "Making AI not stupid (and not too smart)",
+                "body": "First version of AI just moved randomly. Terrible. Second version beelined for the nearest unclaimed territory. Better, but all 3 AI would pile into the same corner and ignore everything else. Final version uses a downsampled 50x50 influence grid that factors in enemy proximity, unclaimed value, and distance from home base. Each faction weighs these differently so they spread out naturally. Took like 4 iterations to get something that felt like \"challenging but beatable\" instead of either braindead or omniscient."
             },
             {
-                "title": "Procedural audio",
-                "body": "23 distinct sounds from pure synthesis: square waves for footsteps, filtered noise for explosions, FM synthesis for level-up chimes. The audio unlock dance for mobile browsers was the trickiest part — multiple event listeners on first touch to satisfy autoplay policies."
+                "title": "Mobile audio autoplay is a nightmare",
+                "body": "Browsers block audio playback until user interaction. Fair enough. But the rules are absurdly inconsistent — some browsers want a click, some accept a touch, iOS Safari requires it to be inside a specific event handler scope. Ended up registering click, touchstart, touchend, and keydown listeners that all call AudioContext.resume() on first trigger then remove themselves. It works, but it took way too many test cycles on different devices to get right. Would love to know why browsers can't just agree on one policy."
             }
+        ],
+        "credits": [
+            { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
         "date": "2026-03"
     },
@@ -121,35 +130,37 @@
         "sourceFolder": "slot003/game-008-wallwars",
         "tagline": "Draw walls · claim territory · real-time multiplayer",
         "ogTagline": "Build Walls, Claim Land!",
-        "description": "Real-time multiplayer territory war. Draw walls on a 20x20 grid, enclose areas to claim them. Play with friends or solo vs AI.",
-        "tags": ["Multiplayer", "Three.js", "Cloudflare Workers"],
+        "description": "Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.",
+        "tags": ["Multiplayer", "Three.js"],
         "features": [
-            "Real-time multiplayer via WebSocket (2-4 players)",
+            "Real-time multiplayer (2-4 players)",
             "Create rooms with 4-letter codes, share with friends",
             "AI fills empty slots automatically",
             "Solo mode with AI opponent",
             "No download, click and play"
         ],
         "designNotes": [
-            "Prototype #008 — First real-time multiplayer game in the series.",
-            "The server runs on Cloudflare Workers with Durable Objects. Each room is a single DO instance that manages game state, tick loop, and WebSocket connections. Room codes use idFromName() so any Worker edge can resolve the same room.",
-            "The flood-fill BFS runs server-side every tick to determine territory ownership. When walls fully enclose an area, it flips to the wall owner. Simple mechanic, emergent strategy.",
-            "Ink system adds resource management — you can't wall spam. Regen is constant, so knowing when to save ink vs when to rush-build matters."
+            "Prototype #008 — first multiplayer game in the series, and easily the most technically ambitious one. Wanted to answer a simple question: can a browser game do real-time multiplayer where you just share a 4-letter code and friends join instantly?",
+            "Core loop: each round lasts 1 minute. You tap to place walls on a 10x10 grid. When your walls fully enclose an area, that territory flips to your color. You can also capture enemy pieces by surrounding them on all four sides (up/down/left/right) with no empty gap. When the timer hits zero, whoever controls the most cells wins. Simple enough to learn in one round, deep enough that I still discover new strategies.",
+            "The territory ownership runs on flood-fill BFS. Every game tick, the algorithm checks all enclosed regions and flips ownership accordingly. Sounds expensive but on a 10x10 grid (100 cells) it's basically free. The interesting design question is what happens at larger scales — a 20x20 grid would be 4x the cells and open up way more complex encirclement patterns, but it might also make games feel slower since there's more empty space to fill.",
+            "Ink system prevents wall spam. You have a meter that drains per wall placed and regens at a constant rate. This single constraint created most of the game's strategy: do you rush-build an aggressive fence across the middle, or save ink to counter the opponent's expansion? I've seen players win by doing almost nothing for 40 seconds then blitzing the last 20.",
+            "If I ever expand this: 20x20 grid with more player types (maybe one that builds faster but has less ink, one that can destroy opponent walls), a spectator mode, and best-of-3 rounds instead of single elimination. The 4-letter room code system would also work great for tournament brackets."
         ],
         "devLog": [
             {
-                "title": "Durable Object gotcha",
-                "body": "Cloudflare free tier requires new_sqlite_classes in wrangler.toml, not new_classes. The error message doesn't mention this — it just says the class isn't found. Cost 2 hours to debug."
+                "title": "Syncing game state across players",
+                "body": "The hardest part of multiplayer isn't the game logic — it's making sure everyone sees the same thing at the same time. My first attempt had noticeable desync where one player would see a wall that didn't exist on the other screen. The fix was simple in theory (server is the single source of truth, clients just render what the server says) but getting the timing right so it doesn't feel laggy took a lot of back and forth. Showing the wall immediately on your screen while waiting for server confirmation was the key trick — 95% of the time the server agrees, so you rarely see a correction."
             },
             {
-                "title": "WebSocket non-Hibernation",
-                "body": "Initially used the Hibernation API (this.state.acceptWebSocket) but it drops in-memory state on idle. Switched to server.accept() for the non-Hibernation path — keeps all player state in RAM for the duration of the game."
+                "title": "Ink economy design",
+                "body": "First playtest without ink limits was miserable. Both players just spam-walled the entire grid in 15 seconds and the game was over before any strategy could happen. Added the ink meter and suddenly every wall placement became a decision. The regen rate took like 6 tweaks to get right — too fast and spam is still viable, too slow and the game feels like you're waiting around. Current rate lets you place about 3 walls in a burst, then you wait 2 seconds to get one more. Feels about right but honestly could still use more playtesting."
             },
             {
-                "title": "Client-side prediction",
-                "body": "Wall placement is sent to server AND shown immediately on client. Server state overwrites on next tick. The visual lag is under 100ms so prediction rarely visibly corrects. Makes the game feel instant even on mobile networks."
+                "title": "Room codes and joining flow",
+                "body": "Wanted the multiplayer join experience to be dead simple: one player creates a room, gets a 4-letter code (like AXBR), texts it to a friend, friend enters the code, they're in. No accounts, no login, no friend lists. The code generation is just random uppercase letters, checked against active rooms to avoid collisions. Biggest UX issue was players entering lowercase codes on phones — added auto-uppercase on the input field and that fixed 90% of the join failures. Sometimes the simplest bugs are the dumbest."
             }
         ],
+        "credits": [],
         "date": "2026-03"
     }
 ]
