@@ -16,17 +16,17 @@ Key technical features across all games:
 
 ## Games
 
-- [Wall Wars](https://ariescar.netlify.app/games/prototype008-wallwars/): Real-time multiplayer territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play with friends or solo vs AI.
-- [Territory Conquest](https://ariescar.netlify.app/games/prototype006-territory/): 4-player territory war on a 3D grid. Drag to paint, close loops to claim land. Play instantly in your browser.
+- [Wall Wars](https://ariescar.netlify.app/games/prototype008-wallwars/): 1v1 territory war on a 10x10 grid. Place walls to enclose areas, surround enemy pieces to capture them. 1-minute rounds, most territory wins. Play online or solo vs AI.
+- [Territory Conquest](https://ariescar.netlify.app/games/prototype006-territory/): 4-player territory war on a 3D grid. Drag to paint, close loops to claim land. 180-second rounds. Play instantly in your browser.
 - [Sky Roller](https://ariescar.netlify.app/games/prototype002-skyroller/): 7-player ball race on a sky track. Dodge crates, collect buffs, ragdoll physics. Play instantly in your browser.
 - [Monster Slash](https://ariescar.netlify.app/games/prototype001-monsterslash/): 3D hack-and-slash prototype. Swipe to cut monsters, chain combos, survive waves. Play instantly in your browser.
 
 ## Dev Logs
 
-- [Wall Wars Dev Log](https://ariescar.netlify.app/posts/008-wallwars.html): Syncing game state across players, Ink economy design, Room codes and joining flow.
-- [Territory Conquest Dev Log](https://ariescar.netlify.app/posts/003-territory.html): 40,000 cells and a frame rate problem, Making AI not stupid (and not too smart), Mobile audio autoplay is a nightmare.
-- [Sky Roller Dev Log](https://ariescar.netlify.app/posts/002-skyroller.html): The SkinnedMesh clone disaster, Animation sharing doesn't work, Ragdoll tuning.
-- [Monster Slash Dev Log](https://ariescar.netlify.app/posts/001-monsterslash.html): The screen shake rabbit hole, Touch input on mobile is cursed, Combo windows and feel.
+- [Wall Wars Dev Log](https://ariescar.netlify.app/posts/008-wallwars.html): Room code UX, Progressive AI difficulty, Flood fill on a small grid.
+- [Territory Conquest Dev Log](https://ariescar.netlify.app/posts/003-territory.html): 40,000 cells and the frame rate cliff, AI behavior on a big grid, Mobile audio autoplay.
+- [Sky Roller Dev Log](https://ariescar.netlify.app/posts/002-skyroller.html): The SkinnedMesh clone disaster, AnimationClip sharing breaks things, Ragdoll force clamping.
+- [Monster Slash Dev Log](https://ariescar.netlify.app/posts/001-monsterslash.html): Screen shake tuning, Touch input on mobile, Hit detection is distance, not timing.
 
 ## Technical Stack
 
