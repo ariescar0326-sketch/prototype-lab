@@ -3,7 +3,7 @@
 
 User-agent: *
 Allow: /
-Sitemap: https://ariescar.netlify.app/sitemap.xml
+Sitemap: https://ariescar.com/sitemap.xml
 
 # === AI Search Engine Crawlers ===
 User-agent: OAI-SearchBot

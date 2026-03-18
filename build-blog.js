@@ -30,7 +30,7 @@ const args = process.argv.slice(2);
 const outDir = args.includes('--out') ? args[args.indexOf('--out') + 1] : __dirname;
 
 // ─── Site config (SEO) ───
-const SITE_URL = 'https://ariescar.netlify.app';
+const SITE_URL = 'https://ariescar.com';
 const AUTHOR = {
     name: 'Ariescar',
     url: 'https://x.com/AriescarTu',
@@ -536,6 +536,18 @@ function buildSitemap(games) {
         urls.push(`  <url><loc>${SITE_URL}/posts/${num}-${g.slug}.html</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`);
         urls.push(`  <url><loc>${SITE_URL}/games/${g.repo}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`);
     }
+    // Tag collection pages
+    const seenTags = new Set();
+    for (const g of games) {
+        for (const tag of (g.tags || [])) {
+            const key = tag.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+            if (!seenTags.has(key)) {
+                seenTags.add(key);
+                urls.push(`  <url><loc>${SITE_URL}/tags/${key}.html</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
+            }
+        }
+    }
+    urls.push(`  <url><loc>${SITE_URL}/tags/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
@@ -602,4 +614,104 @@ const llmsTxt = buildLlmsTxt(games);
 writeFileSync(join(outDir, 'llms.txt'), llmsTxt);
 console.log('  ✅ llms.txt');
 
-console.log(`\n🎉 Done! ${games.length + 3} files written to ${outDir}`);
+// ─── Tag collection pages (LLM SEO: answers "recommend me a X game") ───
+function buildTagPages(games) {
+    const tagMap = {};
+    for (const g of games) {
+        for (const tag of (g.tags || [])) {
+            const key = tag.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+            if (!tagMap[key]) tagMap[key] = { label: tag, games: [] };
+            tagMap[key].games.push(g);
+        }
+    }
+
+    mkdirSync(join(outDir, 'tags'), { recursive: true });
+    const tagIndex = [];
+    let count = 0;
+
+    for (const [slug, { label, games: tagged }] of Object.entries(tagMap)) {
+        if (tagged.length < 1) continue;
+        tagIndex.push({ slug, label, count: tagged.length });
+
+        const cards = tagged.sort((a, b) => b.number - a.number).map(g => {
+            const num = String(g.number).padStart(3, '0');
+            return `<li><a href="/games/${g.repo}/">▶ ${esc(g.name)}</a> — ${esc(g.tagline)}</li>`;
+        }).join('\n            ');
+
+        const pageUrl = `${SITE_URL}/tags/${slug}.html`;
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${esc(label)} Games — Free 3D Browser Games | Prototype Lab</title>
+    <meta name="description" content="${tagged.length} free ${esc(label.toLowerCase())} browser games you can play instantly. No download required.">
+    <link rel="canonical" href="${pageUrl}">
+    <meta property="og:title" content="${esc(label)} Games — Prototype Lab">
+    <meta property="og:url" content="${pageUrl}">
+    <meta property="og:type" content="website">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e0e0e0; line-height: 1.8; }
+        .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+        a { color: #2563eb; text-decoration: none; } a:hover { color: #3b82f6; }
+        nav { margin-bottom: 2rem; font-size: 0.85rem; } nav a { color: #888; }
+        h1 { font-size: 1.5rem; color: #fff; margin-bottom: 1rem; }
+        ul { list-style: none; padding: 0; } li { margin-bottom: 0.8rem; font-size: 1rem; }
+        li a { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav><a href="/">← Prototype Lab</a> · <a href="/tags/">All Tags</a></nav>
+        <h1>${esc(label)} Games (${tagged.length})</h1>
+        <ul>
+            ${cards}
+        </ul>
+    </div>
+</body>
+</html>`;
+        writeFileSync(join(outDir, 'tags', `${slug}.html`), html);
+        count++;
+    }
+
+    // Tag index page
+    const indexCards = tagIndex.sort((a, b) => b.count - a.count)
+        .map(t => `<li><a href="/tags/${t.slug}.html">${esc(t.label)}</a> (${t.count})</li>`)
+        .join('\n            ');
+    const tagIndexHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse by Tag — Free 3D Browser Games | Prototype Lab</title>
+    <meta name="description" content="Browse ${games.length} free 3D browser games by category. ${tagIndex.map(t => t.label).join(', ')}.">
+    <link rel="canonical" href="${SITE_URL}/tags/">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e0e0e0; line-height: 1.8; }
+        .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+        a { color: #2563eb; text-decoration: none; } a:hover { color: #3b82f6; }
+        nav { margin-bottom: 2rem; font-size: 0.85rem; } nav a { color: #888; }
+        h1 { font-size: 1.5rem; color: #fff; margin-bottom: 1rem; }
+        ul { list-style: none; padding: 0; } li { margin-bottom: 0.6rem; font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav><a href="/">← Prototype Lab</a></nav>
+        <h1>Browse by Tag</h1>
+        <ul>
+            ${indexCards}
+        </ul>
+    </div>
+</body>
+</html>`;
+    writeFileSync(join(outDir, 'tags', 'index.html'), tagIndexHtml);
+    return count;
+}
+
+const tagCount = buildTagPages(games);
+console.log(`  ✅ ${tagCount} tag pages + tags/index.html`);
+
+console.log(`\n🎉 Done! ${games.length + tagCount + 4} files written to ${outDir}`);
