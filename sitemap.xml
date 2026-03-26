@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://ariescar.com/</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://ariescar.com/posts/008-wallwars.html</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ariescar.com/games/prototype008-wallwars/</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://ariescar.com/posts/003-territory.html</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ariescar.com/games/prototype006-territory/</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://ariescar.com/posts/002-skyroller.html</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ariescar.com/games/prototype002-skyroller/</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://ariescar.com/posts/001-monsterslash.html</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://ariescar.com/games/prototype001-monsterslash/</loc><lastmod>2026-03-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://ariescar.com/tags/1v1-multiplayer.html</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://ariescar.com/tags/three-js.html</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://ariescar.com/tags/4-players.html</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://ariescar.com/tags/7-players.html</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://ariescar.com/tags/hack-slash.html</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://ariescar.com/tags/</loc><lastmod>2026-03-18</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://ariescar.com/prototype.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://ariescar.com/posts/001-monsterslash.html</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ariescar.com/games/prototype001-monsterslash/</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://ariescar.com/posts/002-skyroller.html</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ariescar.com/games/prototype002-skyroller/</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://ariescar.com/posts/003-territory.html</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ariescar.com/games/prototype006-territory/</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://ariescar.com/posts/008-wallwars.html</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ariescar.com/games/prototype008-wallwars/</loc><lastmod>2026-03-26</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://ariescar.com/tags/hack-slash.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/tags/three-js.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/tags/7-players.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/tags/4-players.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/tags/1v1-multiplayer.html</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://ariescar.com/tags/</loc><lastmod>2026-03-26</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
 </urlset>

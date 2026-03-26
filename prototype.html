@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototype Gallery — All Games | Prototype Lab</title>
+    <meta name="description" content="Browse all 4 prototype browser games. Click to play instantly.">
+    <link rel="canonical" href="https://ariescar.com/prototype.html">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#FAFAF8;--card-bg:#FFF;--text:#1A1A1A;--text2:#6B6B6B;--text3:#9E9E9E;--border:#EBEBEB;--accent:#2A2A2A;--radius:12px;--gap:14px;--card-min:156px;--t:0.2s cubic-bezier(.25,.46,.45,.94)}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+        .container{max-width:1200px;margin:0 auto;padding:0 20px}
+        header{padding:32px 0 0;text-align:center}
+        .logo{font-size:1.1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+        .header-links{margin-top:10px;display:flex;justify-content:center;gap:16px;align-items:center}
+        .header-links a,.kofi-toggle{font-size:.78rem;color:var(--text2);text-decoration:none;transition:color var(--t);cursor:pointer;user-select:none}
+        .header-links a:hover,.kofi-toggle:hover{color:var(--text)}
+        .kofi-toggle.active{color:var(--text);font-weight:600}
+        .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--text3)}
+        .kofi-panel{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0}
+        .kofi-panel.open{max-height:720px;opacity:1;margin-top:12px}
+        .kofi-panel iframe{border:none;width:100%;height:712px;background:transparent;display:block;border-radius:var(--radius)}
+        .nav-tabs{display:flex;gap:24px;margin-top:24px;border-bottom:1px solid var(--border)}
+        .nav-tab{font-size:.82rem;font-weight:500;color:var(--text3);text-decoration:none;padding-bottom:10px;border-bottom:2px solid transparent;transition:color var(--t),border-color var(--t)}
+        .nav-tab:hover{color:var(--text2)}
+        .nav-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
+        .gallery-header{display:flex;justify-content:flex-end;margin:12px 0 14px}
+        .gallery-count{font-size:.75rem;color:var(--text3)}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-min),1fr));gap:var(--gap)}
+        .card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden;cursor:pointer;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow var(--t),transform var(--t);aspect-ratio:1/1;position:relative}
+        .card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);transform:translateY(-2px)}
+        .card:active{transform:translateY(0) scale(.98)}
+        .card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+        .card:hover img{transform:scale(1.04)}
+        .card-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--text3);background:#F0F0EC}
+        .card-label{position:absolute;bottom:0;left:0;right:0;padding:24px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 100%);pointer-events:none}
+        .card-label span{font-size:.78rem;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .card-orient{position:absolute;top:8px;right:8px;font-size:.6rem;font-weight:600;color:rgba(255,255,255,.7);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:8px;backdrop-filter:blur(4px);pointer-events:none}
+        .loader{text-align:center;padding:32px 0 48px;color:var(--text3);font-size:.8rem}
+        .loader-dots{display:inline-flex;gap:4px;margin-top:8px}
+        .loader-dots span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:pulse 1.2s infinite}
+        .loader-dots span:nth-child(2){animation-delay:.2s}
+        .loader-dots span:nth-child(3){animation-delay:.4s}
+        @keyframes pulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+        .loader.done{display:none}
+        .modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s ease}
+        .modal-overlay.open{display:flex;align-items:center;justify-content:center}
+        .modal-overlay.visible{opacity:1}
+        .modal-frame{position:relative;border-radius:16px;overflow:hidden;background:#000;box-shadow:0 24px 80px rgba(0,0,0,.4);transform:scale(.95);transition:transform .25s ease}
+        .modal-frame.portrait{width:92vw;height:90vh;max-width:480px;max-height:860px}
+        .modal-frame.landscape{width:94vw;height:80vh;max-width:900px;max-height:600px}
+        .modal-overlay.visible .modal-frame{transform:scale(1)}
+        .modal-frame iframe{width:100%;height:100%;border:none;display:block}
+        .modal-close{position:absolute;top:12px;right:12px;z-index:10;width:36px;height:36px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+        .modal-close:hover{background:rgba(0,0,0,.75)}
+        .modal-title{position:absolute;top:12px;left:16px;z-index:10;font-size:.8rem;font-weight:600;color:#fff;background:rgba(0,0,0,.4);padding:4px 12px;border-radius:20px;backdrop-filter:blur(8px)}
+        footer{text-align:center;padding:24px 0 40px;border-top:1px solid var(--border);margin-top:16px}
+        .footer-links{display:flex;justify-content:center;gap:20px}
+        .footer-links a{font-size:.75rem;color:var(--text3);text-decoration:none;transition:color var(--t)}
+        .footer-links a:hover{color:var(--text)}
+        .footer-copy{font-size:.7rem;color:var(--text3);margin-top:8px}
+        @media(max-width:480px){:root{--gap:10px;--card-min:140px}.container{padding:0 14px}header{padding:24px 0 0}.modal-frame.portrait,.modal-frame.landscape{width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0}}
+        @media(min-width:768px){:root{--card-min:180px;--gap:16px}}
+        @media(min-width:1024px){:root{--card-min:190px}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Prototype Lab</div>
+            <div class="header-links">
+                <span class="kofi-toggle" id="kofiToggle" onclick="toggleKofi()">Buy me a coffee</span>
+                <div class="dot-sep"></div>
+                <a href="https://x.com/AriescarTu" target="_blank">X / Twitter</a>
+                <div class="dot-sep"></div>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Info</a>
+            </div>
+            <div class="kofi-panel" id="kofiPanel">
+                <iframe src="https://ko-fi.com/ariescar/?hidefeed=true&widget=true&embed=true&preview=true"
+                    title="Support Ariescar on Ko-fi"></iframe>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/prototype.html" class="nav-tab active">Prototype</a>
+            <a href="/" class="nav-tab">Shipped</a>
+        </nav>
+
+        <div class="gallery-header">
+            <span class="gallery-count" id="countLabel"></span>
+        </div>
+        <div class="grid" id="gameGrid"></div>
+        <div class="loader" id="loader"><div class="loader-dots"><span></span><span></span><span></span></div></div>
+
+        <footer>
+            <div class="footer-links">
+                <a href="https://ko-fi.com/ariescar" target="_blank">Ko-fi</a>
+                <a href="https://x.com/AriescarTu" target="_blank">X</a>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Linktree</a>
+            </div>
+            <p class="footer-copy">Prototype Lab &mdash; Ariescar</p>
+        </footer>
+    </div>
+
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal-frame portrait">
+            <span class="modal-title" id="modalTitle"></span>
+            <button class="modal-close" onclick="closeGame()" aria-label="Close">&times;</button>
+            <iframe id="gameIframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <script>
+    const ALL_GAMES = [{"name":"Wall Wars","slug":"prototype008-wallwars","orientation":"portrait","hasImage":true,"url":"/games/prototype008-wallwars/"},{"name":"Territory Conquest","slug":"prototype006-territory","orientation":"portrait","hasImage":true,"url":"/games/prototype006-territory/"},{"name":"Sky Roller","slug":"prototype002-skyroller","orientation":"portrait","hasImage":true,"url":"/games/prototype002-skyroller/"},{"name":"Monster Slash","slug":"prototype001-monsterslash","orientation":"portrait","hasImage":true,"url":"/games/prototype001-monsterslash/"}];
+    const PAGE_SIZE = 10;
+    let shuffled, loaded = 0;
+
+    // Fisher-Yates shuffle
+    function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+    shuffled = shuffle(ALL_GAMES);
+
+    function createCard(g){
+        const c=document.createElement('div');c.className='card';c.role='button';c.tabIndex=0;
+        const orient=g.orientation==='landscape'?'PC':'M';
+        if(g.hasImage){
+            c.innerHTML='<img src="/games/'+g.slug+'/og-image.png" alt="'+g.name+'" loading="lazy"><div class="card-label"><span>'+g.name+'</span></div><span class="card-orient">'+orient+'</span>';
+        }else{
+            c.innerHTML='<div class="card-placeholder">'+g.name.charAt(0)+'</div><div class="card-label"><span>'+g.name+'</span></div><span class="card-orient">'+orient+'</span>';
+        }
+        c.onclick=()=>openGame(g);
+        return c;
+    }
+
+    function loadMore(){
+        const grid=document.getElementById('gameGrid');
+        const end=Math.min(loaded+PAGE_SIZE,shuffled.length);
+        const f=document.createDocumentFragment();
+        for(let i=loaded;i<end;i++)f.appendChild(createCard(shuffled[i]));
+        grid.appendChild(f);loaded=end;
+        document.getElementById('countLabel').textContent=loaded+' / '+shuffled.length;
+        if(loaded>=shuffled.length)document.getElementById('loader').classList.add('done');
+    }
+
+    const obs=new IntersectionObserver(e=>{if(e[0].isIntersecting&&loaded<shuffled.length)loadMore()},{rootMargin:'200px'});
+    obs.observe(document.getElementById('loader'));
+
+    function openGame(g){
+        const m=document.getElementById('gameModal'),f=document.querySelector('.modal-frame'),
+              iframe=document.getElementById('gameIframe'),t=document.getElementById('modalTitle');
+        f.classList.remove('portrait','landscape');f.classList.add(g.orientation||'portrait');
+        t.textContent=g.name;iframe.src=g.url;
+        m.classList.add('open');requestAnimationFrame(()=>requestAnimationFrame(()=>m.classList.add('visible')));
+        document.body.style.overflow='hidden';
+    }
+
+    function closeGame(){
+        const m=document.getElementById('gameModal'),iframe=document.getElementById('gameIframe');
+        m.classList.remove('visible');
+        setTimeout(()=>{m.classList.remove('open');iframe.src='about:blank';document.body.style.overflow=''},250);
+    }
+
+    document.getElementById('gameModal').onclick=e=>{if(e.target.classList.contains('modal-overlay'))closeGame()};
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGame()});
+    function toggleKofi(){document.getElementById('kofiPanel').classList.toggle('open');document.getElementById('kofiToggle').classList.toggle('active')}
+
+    loadMore();
+    </script>
+</body>
+</html>

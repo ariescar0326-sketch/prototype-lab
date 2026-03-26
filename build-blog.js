@@ -154,39 +154,50 @@ function schemaArticle(g) {
     });
 }
 
-// ─── Index page ───
+// ─── Separate games by deployMode ───
+function splitByMode(games) {
+    const shipped = games.filter(g => g.deployMode === 'premium');
+    const prototype = games.filter(g => g.deployMode === 'base');
+    // Legacy: games without deployMode go to shipped (they were manually added before deploy.js)
+    const legacy = games.filter(g => !g.deployMode);
+    return { shipped: [...shipped, ...legacy], prototype };
+}
+
+// ─── Index page (Shipped — white theme, card flow) ───
 function buildIndex(games) {
-    const cards = games
-        .sort((a, b) => b.number - a.number)  // newest first
-        .map(g => {
-            const num = String(g.number).padStart(3, '0');
-            return `
-            <!-- Game ${num} -->
+    const { shipped } = splitByMode(games);
+    const display = shipped.sort((a, b) => b.number - a.number);
+
+    const cards = display.map(g => {
+        const num = String(g.number).padStart(3, '0');
+        const orientBadge = g.orientation === 'landscape' ? 'PC' : 'M';
+        return `
             <div class="game-card">
                 <a class="cover-wrap" href="/games/${g.repo}/">
                     ${coverHtml(g)}
                     <div class="cover-overlay"></div>
                     <span class="cover-title">${esc(g.name)}</span>
+                    <span class="orient-badge">${orientBadge}</span>
                 </a>
                 <div class="card-actions">
-                    <a href="/games/${g.repo}/" class="btn-play">▶ PLAY</a>
+                    <a href="/games/${g.repo}/" class="btn-play">&#9654; PLAY</a>
                     <a href="/posts/${num}-${g.slug}.html" class="btn-devlog">DevLog</a>
                 </div>
             </div>`;
-        }).join('\n');
+    }).join('\n');
 
-    const newestRepo = games.sort((a, b) => b.number - a.number)[0]?.repo || '';
-    const siteDescription = `${games.length} free 3D browser games built with AI-assisted development. Play instantly on mobile — no download required. Three.js, procedural audio, and Vibe Coding.`;
+    const newestRepo = display[0]?.repo || '';
+    const siteDescription = `${games.length} free browser games built with AI-assisted development. Play instantly — no download required.`;
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototype Lab — Free 3D Browser Games by Ariescar</title>
+    <title>Prototype Lab — Free Browser Games by Ariescar</title>
     <meta name="description" content="${esc(siteDescription)}">
     <link rel="canonical" href="${SITE_URL}/">
-    <meta property="og:title" content="Prototype Lab — Free 3D Browser Games">
+    <meta property="og:title" content="Prototype Lab — Free Browser Games">
     <meta property="og:description" content="${esc(siteDescription)}">
     <meta property="og:image" content="${SITE_URL}/games/${newestRepo}/og-image.png">
     <meta property="og:url" content="${SITE_URL}/">
@@ -198,154 +209,291 @@ function buildIndex(games) {
     <meta name="google-site-verification" content="XxItPiajCa76RAenxbryUBamHCfuciBdJnOQaa4oVwI" />
     <script type="application/ld+json">${schemaWebSite(games)}</script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #121220; color: #e0e0e0; line-height: 1.6;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .container { max-width: 480px; margin: 0 auto; padding: 0 0.8rem; }
-        header {
-            position: sticky; top: 0; z-index: 100;
-            background: rgba(18, 18, 32, 0.88);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            text-align: center;
-            padding: 0.8rem 0 0.7rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        h1 { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; margin-bottom: 0.35rem; }
-        .kofi-btn {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 0.82rem; font-weight: 600; color: #fff; text-decoration: none;
-            padding: 0.38rem 1rem; border-radius: 20px;
-            background: #ff5e5b;
-            transition: background 0.2s, transform 0.12s;
-            cursor: pointer; user-select: none; border: none; white-space: nowrap;
-        }
-        .kofi-btn:hover { background: #e84e4b; transform: scale(1.03); }
-        .kofi-btn:active { transform: scale(0.97); }
-        .kofi-btn.active { background: #cc4a48; }
-        .kofi-mobile { display: inline-flex; }
-        .kofi-desktop { display: none; }
-        .kofi-panel {
-            display: none; max-height: 0; overflow: hidden;
-            transition: max-height 0.4s ease, opacity 0.3s ease; opacity: 0;
-        }
-        .kofi-panel.open { max-height: 750px; opacity: 1; }
-        .kofi-panel iframe { border: none; width: 100%; height: 712px; background: transparent; display: block; }
-        @media (min-width: 768px) {
-            .container { max-width: 560px; padding: 0 1.2rem; }
-            .kofi-mobile { display: none; }
-            .kofi-desktop { display: inline-flex; }
-            .kofi-panel { display: block; }
-        }
-        main { padding-top: 0.8rem; }
-        .game-card {
-            position: relative; border-radius: 14px; overflow: hidden;
-            margin-bottom: 0.8rem; background: #1a1a30;
-            transition: transform 0.15s, box-shadow 0.25s;
-        }
-        .game-card:hover { box-shadow: 0 6px 28px rgba(99, 102, 241, 0.15); }
-        .game-card:active { transform: scale(0.98); }
-        .cover-wrap {
-            display: block; position: relative; overflow: hidden;
-            aspect-ratio: 16/9; cursor: pointer;
-        }
-        .cover-wrap img, .cover-wrap video {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-            transition: transform 0.4s ease;
-        }
-        .game-card:hover .cover-wrap img,
-        .game-card:hover .cover-wrap video { transform: scale(1.04); }
-        .cover-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(to bottom, rgba(18,18,32,0) 20%, rgba(18,18,32,0.3) 50%, rgba(18,18,32,0.85) 100%);
-            pointer-events: none;
-        }
-        .cover-title {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 1.3rem; font-weight: 800; color: #fff;
-            text-shadow: 0 2px 12px rgba(0,0,0,0.7), 0 0 40px rgba(0,0,0,0.4);
-            text-align: center; letter-spacing: 0.01em; line-height: 1.2;
-            pointer-events: none; z-index: 2; width: 80%;
-        }
-        .card-actions {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 0 0.7rem 0.6rem;
-            display: flex; align-items: flex-end; justify-content: space-between; z-index: 3;
-        }
-        .btn-play {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 0.45rem 1.2rem; border-radius: 22px;
-            font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em;
-            color: #fff; text-decoration: none;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            box-shadow: 0 2px 14px rgba(34,197,94,0.4);
-            transition: transform 0.12s, box-shadow 0.2s; white-space: nowrap;
-        }
-        .btn-play:hover { transform: scale(1.06); box-shadow: 0 4px 22px rgba(34,197,94,0.55); }
-        .btn-play:active { transform: scale(0.96); }
-        .btn-devlog {
-            padding: 0.25rem 0.55rem; border-radius: 6px;
-            font-size: 0.62rem; font-weight: 600;
-            color: rgba(255,255,255,0.35); text-decoration: none;
-            background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
-            transition: color 0.2s, background 0.2s;
-        }
-        .btn-devlog:hover { color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.55); }
-        footer {
-            display: flex; justify-content: center; align-items: center;
-            gap: 0.8rem; padding: 1.2rem 0 1.8rem;
-        }
-        .social-icon {
-            display: flex; align-items: center; justify-content: center;
-            width: 34px; height: 34px; border-radius: 50%;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
-            transition: background 0.2s, border-color 0.2s;
-        }
-        .social-icon:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
-        .social-icon svg { width: 15px; height: 15px; fill: rgba(255,255,255,0.4); }
-        .social-icon:hover svg { fill: #fff; }
-        @media (min-width: 600px) {
-            .cover-title { font-size: 1.5rem; }
-            .btn-play { padding: 0.5rem 1.4rem; font-size: 0.88rem; }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#FAFAF8;--card-bg:#FFF;--text:#1A1A1A;--text2:#6B6B6B;--text3:#9E9E9E;--border:#EBEBEB;--accent:#2A2A2A;--radius:14px;--t:0.2s cubic-bezier(.25,.46,.45,.94)}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+        .container{max-width:560px;margin:0 auto;padding:0 20px}
+        header{padding:32px 0 0;text-align:center}
+        .logo{font-size:1.1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+        .header-links{margin-top:10px;display:flex;justify-content:center;gap:16px;align-items:center}
+        .header-links a,.kofi-toggle{font-size:.78rem;color:var(--text2);text-decoration:none;transition:color var(--t);cursor:pointer;user-select:none}
+        .header-links a:hover,.kofi-toggle:hover{color:var(--text)}
+        .kofi-toggle.active{color:var(--text);font-weight:600}
+        .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--text3)}
+        .kofi-panel{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0;margin-top:0}
+        .kofi-panel.open{max-height:720px;opacity:1;margin-top:12px}
+        .kofi-panel iframe{border:none;width:100%;height:712px;background:transparent;display:block;border-radius:var(--radius)}
+        .subscribe-section{margin:24px auto 0;max-width:480px;background:#F5F4F0;border:1px solid #E5E3DC;border-radius:var(--radius);padding:18px 22px;text-align:center}
+        .subscribe-title{font-size:.95rem;margin-bottom:3px}
+        .subscribe-title strong{font-weight:700;letter-spacing:.02em}
+        .subscribe-desc{font-size:.8rem;color:var(--text2);margin-bottom:11px;line-height:1.55}
+        .subscribe-form{display:flex;gap:8px;max-width:360px;margin:0 auto}
+        .subscribe-form input[type=email]{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:.82rem;background:#fff;color:var(--text);outline:none}
+        .subscribe-form input:focus{border-color:var(--accent)}
+        .subscribe-form button{padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:background var(--t);white-space:nowrap}
+        .subscribe-form button:hover{background:#444}
+        .nav-tabs{display:flex;gap:24px;margin-top:24px;border-bottom:1px solid var(--border)}
+        .nav-tab{font-size:.82rem;font-weight:500;color:var(--text3);text-decoration:none;padding-bottom:10px;border-bottom:2px solid transparent;transition:color var(--t),border-color var(--t)}
+        .nav-tab:hover{color:var(--text2)}
+        .nav-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
+        main{padding-top:14px}
+        .game-card{position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:14px;background:var(--card-bg);border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04);transition:transform .15s,box-shadow .25s}
+        .game-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08)}
+        .game-card:active{transform:scale(.99)}
+        .cover-wrap{display:block;position:relative;overflow:hidden;aspect-ratio:16/9;cursor:pointer}
+        .cover-wrap img,.cover-wrap video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease}
+        .game-card:hover .cover-wrap img,.game-card:hover .cover-wrap video{transform:scale(1.04)}
+        .cover-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(26,26,26,0) 20%,rgba(26,26,26,.25) 50%,rgba(26,26,26,.8) 100%);pointer-events:none}
+        .cover-title{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.3rem;font-weight:800;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;line-height:1.2;pointer-events:none;z-index:2;width:80%}
+        .orient-badge{position:absolute;top:10px;right:10px;font-size:.6rem;font-weight:600;color:rgba(255,255,255,.7);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:8px;backdrop-filter:blur(4px);z-index:3}
+        .card-actions{position:absolute;bottom:0;left:0;right:0;padding:0 14px 12px;display:flex;align-items:flex-end;justify-content:space-between;z-index:3}
+        .btn-play{display:inline-flex;align-items:center;gap:5px;padding:8px 20px;border-radius:22px;font-size:.82rem;font-weight:700;letter-spacing:.06em;color:#fff;text-decoration:none;background:var(--accent);box-shadow:0 2px 12px rgba(0,0,0,.25);transition:transform .12s,box-shadow .2s;white-space:nowrap}
+        .btn-play:hover{transform:scale(1.06);box-shadow:0 4px 20px rgba(0,0,0,.35)}
+        .btn-play:active{transform:scale(.96)}
+        .btn-devlog{padding:4px 10px;border-radius:6px;font-size:.65rem;font-weight:600;color:rgba(255,255,255,.4);text-decoration:none;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);transition:color .2s,background .2s}
+        .btn-devlog:hover{color:rgba(255,255,255,.8);background:rgba(0,0,0,.5)}
+        footer{text-align:center;padding:24px 0 40px;border-top:1px solid var(--border);margin-top:16px}
+        .footer-links{display:flex;justify-content:center;gap:20px}
+        .footer-links a{font-size:.75rem;color:var(--text3);text-decoration:none;transition:color var(--t)}
+        .footer-links a:hover{color:var(--text)}
+        .footer-copy{font-size:.7rem;color:var(--text3);margin-top:8px}
+        @media(max-width:480px){.container{padding:0 14px}header{padding:24px 0 0}.subscribe-section{padding:14px 16px;margin-top:18px}.subscribe-form{flex-direction:column}.subscribe-form button{width:100%}.cover-title{font-size:1.1rem}}
+        @media(min-width:600px){.cover-title{font-size:1.5rem}.btn-play{padding:9px 22px;font-size:.88rem}}
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Prototype Lab</h1>
-            <a href="https://ko-fi.com/ariescar" target="_blank" class="kofi-btn kofi-mobile">☕ Buy me a coffee</a>
-            <span class="kofi-btn kofi-desktop" id="kofiToggle" onclick="toggleKofi()">☕ Buy me a coffee</span>
+            <div class="logo">Prototype Lab</div>
+            <div class="header-links">
+                <span class="kofi-toggle" id="kofiToggle" onclick="toggleKofi()">Buy me a coffee</span>
+                <div class="dot-sep"></div>
+                <a href="https://x.com/AriescarTu" target="_blank">X / Twitter</a>
+                <div class="dot-sep"></div>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Info</a>
+            </div>
             <div class="kofi-panel" id="kofiPanel">
                 <iframe src="https://ko-fi.com/ariescar/?hidefeed=true&widget=true&embed=true&preview=true"
                     title="Support Ariescar on Ko-fi"></iframe>
             </div>
         </header>
 
+        <div class="subscribe-section">
+            <p class="subscribe-title"><strong>Kill / Ship Weekly</strong></p>
+            <p class="subscribe-desc">A weekly breakdown of game mechanics.<br>Which prototypes survive, which get cut, and why.</p>
+            <form class="subscribe-form" onsubmit="handleSubscribe(event)">
+                <input type="email" placeholder="your@email.com" required>
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+
+        <nav class="nav-tabs">
+            <a href="/prototype.html" class="nav-tab">Prototype</a>
+            <a href="/" class="nav-tab active">Shipped</a>
+        </nav>
+
         <main>${cards}
         </main>
 
         <footer>
-            <a href="https://x.com/AriescarTu" target="_blank" class="social-icon" title="X">
-                <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="https://linktr.ee/ariescar0326" target="_blank" class="social-icon" title="Linktree">
-                <svg viewBox="0 0 24 24"><path d="M7.953 15.066l-.038-4.044 4.044-.038.038 4.044zm8.13-4.044l-4.044.038.038 4.044 4.044-.038zM7.916 7.178L12 3.094l4.084 4.084-4.084 4.084zM12 20.906l-4.084-4.084 4.084-4.084 4.084 4.084z"/></svg>
-            </a>
-            <a href="https://ko-fi.com/ariescar" target="_blank" class="social-icon" title="Ko-fi">
-                <svg viewBox="0 0 24 24"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.059-4.011 3.059s-.591-.583-1.189-1.195l-.021-.019c-1.193-1.193-1.339-2.383-.768-3.327.547-.904 1.664-1.34 2.629-1.34 1.157 0 2.279.687 2.768 1.397.851-.702 1.636-1.397 2.768-1.397.964 0 2.082.436 2.629 1.34.571.944.425 2.134-.768 3.327-.597.612-1.189 1.195-1.189 1.195s-2.765-1.606-4.011-3.059c-.073-.09.023-.179.073-.09z"/></svg>
-            </a>
+            <div class="footer-links">
+                <a href="https://ko-fi.com/ariescar" target="_blank">Ko-fi</a>
+                <a href="https://x.com/AriescarTu" target="_blank">X</a>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Linktree</a>
+            </div>
+            <p class="footer-copy">Prototype Lab &mdash; Ariescar</p>
         </footer>
     </div>
     <script>
-        function toggleKofi() {
-            const panel = document.getElementById('kofiPanel');
-            const toggle = document.getElementById('kofiToggle');
-            panel.classList.toggle('open');
-            toggle.classList.toggle('active');
+        function toggleKofi(){const p=document.getElementById('kofiPanel'),t=document.getElementById('kofiToggle');p.classList.toggle('open');t.classList.toggle('active')}
+        function handleSubscribe(e){e.preventDefault();const i=e.target.querySelector('input'),b=e.target.querySelector('button');b.textContent='Subscribed!';b.style.background='#4CAF50';i.value='';setTimeout(()=>{b.textContent='Subscribe';b.style.background=''},2000)}
+    </script>
+</body>
+</html>`;
+}
+
+// ─── Prototype Gallery page (grid, infinite scroll, random) ───
+function buildPrototypePage(games) {
+    const { prototype, shipped } = splitByMode(games);
+    // Include all games in the prototype gallery (both base and premium)
+    const allForGallery = [...prototype, ...shipped].sort((a, b) => b.number - a.number);
+
+    const gamesJson = JSON.stringify(allForGallery.map(g => ({
+        name: g.name,
+        slug: g.repo,
+        orientation: g.orientation || 'portrait',
+        hasImage: existsSync(join(__dirname, 'games', g.repo, 'og-image.png')),
+        url: `/games/${g.repo}/`
+    })));
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototype Gallery — All Games | Prototype Lab</title>
+    <meta name="description" content="Browse all ${allForGallery.length} prototype browser games. Click to play instantly.">
+    <link rel="canonical" href="${SITE_URL}/prototype.html">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#FAFAF8;--card-bg:#FFF;--text:#1A1A1A;--text2:#6B6B6B;--text3:#9E9E9E;--border:#EBEBEB;--accent:#2A2A2A;--radius:12px;--gap:14px;--card-min:156px;--t:0.2s cubic-bezier(.25,.46,.45,.94)}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+        .container{max-width:1200px;margin:0 auto;padding:0 20px}
+        header{padding:32px 0 0;text-align:center}
+        .logo{font-size:1.1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+        .header-links{margin-top:10px;display:flex;justify-content:center;gap:16px;align-items:center}
+        .header-links a,.kofi-toggle{font-size:.78rem;color:var(--text2);text-decoration:none;transition:color var(--t);cursor:pointer;user-select:none}
+        .header-links a:hover,.kofi-toggle:hover{color:var(--text)}
+        .kofi-toggle.active{color:var(--text);font-weight:600}
+        .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--text3)}
+        .kofi-panel{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0}
+        .kofi-panel.open{max-height:720px;opacity:1;margin-top:12px}
+        .kofi-panel iframe{border:none;width:100%;height:712px;background:transparent;display:block;border-radius:var(--radius)}
+        .nav-tabs{display:flex;gap:24px;margin-top:24px;border-bottom:1px solid var(--border)}
+        .nav-tab{font-size:.82rem;font-weight:500;color:var(--text3);text-decoration:none;padding-bottom:10px;border-bottom:2px solid transparent;transition:color var(--t),border-color var(--t)}
+        .nav-tab:hover{color:var(--text2)}
+        .nav-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
+        .gallery-header{display:flex;justify-content:flex-end;margin:12px 0 14px}
+        .gallery-count{font-size:.75rem;color:var(--text3)}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-min),1fr));gap:var(--gap)}
+        .card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden;cursor:pointer;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow var(--t),transform var(--t);aspect-ratio:1/1;position:relative}
+        .card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08);transform:translateY(-2px)}
+        .card:active{transform:translateY(0) scale(.98)}
+        .card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+        .card:hover img{transform:scale(1.04)}
+        .card-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--text3);background:#F0F0EC}
+        .card-label{position:absolute;bottom:0;left:0;right:0;padding:24px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 100%);pointer-events:none}
+        .card-label span{font-size:.78rem;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .card-orient{position:absolute;top:8px;right:8px;font-size:.6rem;font-weight:600;color:rgba(255,255,255,.7);background:rgba(0,0,0,.3);padding:2px 7px;border-radius:8px;backdrop-filter:blur(4px);pointer-events:none}
+        .loader{text-align:center;padding:32px 0 48px;color:var(--text3);font-size:.8rem}
+        .loader-dots{display:inline-flex;gap:4px;margin-top:8px}
+        .loader-dots span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:pulse 1.2s infinite}
+        .loader-dots span:nth-child(2){animation-delay:.2s}
+        .loader-dots span:nth-child(3){animation-delay:.4s}
+        @keyframes pulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+        .loader.done{display:none}
+        .modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s ease}
+        .modal-overlay.open{display:flex;align-items:center;justify-content:center}
+        .modal-overlay.visible{opacity:1}
+        .modal-frame{position:relative;border-radius:16px;overflow:hidden;background:#000;box-shadow:0 24px 80px rgba(0,0,0,.4);transform:scale(.95);transition:transform .25s ease}
+        .modal-frame.portrait{width:92vw;height:90vh;max-width:480px;max-height:860px}
+        .modal-frame.landscape{width:94vw;height:80vh;max-width:900px;max-height:600px}
+        .modal-overlay.visible .modal-frame{transform:scale(1)}
+        .modal-frame iframe{width:100%;height:100%;border:none;display:block}
+        .modal-close{position:absolute;top:12px;right:12px;z-index:10;width:36px;height:36px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+        .modal-close:hover{background:rgba(0,0,0,.75)}
+        .modal-title{position:absolute;top:12px;left:16px;z-index:10;font-size:.8rem;font-weight:600;color:#fff;background:rgba(0,0,0,.4);padding:4px 12px;border-radius:20px;backdrop-filter:blur(8px)}
+        footer{text-align:center;padding:24px 0 40px;border-top:1px solid var(--border);margin-top:16px}
+        .footer-links{display:flex;justify-content:center;gap:20px}
+        .footer-links a{font-size:.75rem;color:var(--text3);text-decoration:none;transition:color var(--t)}
+        .footer-links a:hover{color:var(--text)}
+        .footer-copy{font-size:.7rem;color:var(--text3);margin-top:8px}
+        @media(max-width:480px){:root{--gap:10px;--card-min:140px}.container{padding:0 14px}header{padding:24px 0 0}.modal-frame.portrait,.modal-frame.landscape{width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0}}
+        @media(min-width:768px){:root{--card-min:180px;--gap:16px}}
+        @media(min-width:1024px){:root{--card-min:190px}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Prototype Lab</div>
+            <div class="header-links">
+                <span class="kofi-toggle" id="kofiToggle" onclick="toggleKofi()">Buy me a coffee</span>
+                <div class="dot-sep"></div>
+                <a href="https://x.com/AriescarTu" target="_blank">X / Twitter</a>
+                <div class="dot-sep"></div>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Info</a>
+            </div>
+            <div class="kofi-panel" id="kofiPanel">
+                <iframe src="https://ko-fi.com/ariescar/?hidefeed=true&widget=true&embed=true&preview=true"
+                    title="Support Ariescar on Ko-fi"></iframe>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/prototype.html" class="nav-tab active">Prototype</a>
+            <a href="/" class="nav-tab">Shipped</a>
+        </nav>
+
+        <div class="gallery-header">
+            <span class="gallery-count" id="countLabel"></span>
+        </div>
+        <div class="grid" id="gameGrid"></div>
+        <div class="loader" id="loader"><div class="loader-dots"><span></span><span></span><span></span></div></div>
+
+        <footer>
+            <div class="footer-links">
+                <a href="https://ko-fi.com/ariescar" target="_blank">Ko-fi</a>
+                <a href="https://x.com/AriescarTu" target="_blank">X</a>
+                <a href="https://linktr.ee/ariescar0326" target="_blank">Linktree</a>
+            </div>
+            <p class="footer-copy">Prototype Lab &mdash; Ariescar</p>
+        </footer>
+    </div>
+
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal-frame portrait">
+            <span class="modal-title" id="modalTitle"></span>
+            <button class="modal-close" onclick="closeGame()" aria-label="Close">&times;</button>
+            <iframe id="gameIframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <script>
+    const ALL_GAMES = ${gamesJson};
+    const PAGE_SIZE = 10;
+    let shuffled, loaded = 0;
+
+    // Fisher-Yates shuffle
+    function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+    shuffled = shuffle(ALL_GAMES);
+
+    function createCard(g){
+        const c=document.createElement('div');c.className='card';c.role='button';c.tabIndex=0;
+        const orient=g.orientation==='landscape'?'PC':'M';
+        if(g.hasImage){
+            c.innerHTML='<img src="/games/'+g.slug+'/og-image.png" alt="'+g.name+'" loading="lazy"><div class="card-label"><span>'+g.name+'</span></div><span class="card-orient">'+orient+'</span>';
+        }else{
+            c.innerHTML='<div class="card-placeholder">'+g.name.charAt(0)+'</div><div class="card-label"><span>'+g.name+'</span></div><span class="card-orient">'+orient+'</span>';
         }
+        c.onclick=()=>openGame(g);
+        return c;
+    }
+
+    function loadMore(){
+        const grid=document.getElementById('gameGrid');
+        const end=Math.min(loaded+PAGE_SIZE,shuffled.length);
+        const f=document.createDocumentFragment();
+        for(let i=loaded;i<end;i++)f.appendChild(createCard(shuffled[i]));
+        grid.appendChild(f);loaded=end;
+        document.getElementById('countLabel').textContent=loaded+' / '+shuffled.length;
+        if(loaded>=shuffled.length)document.getElementById('loader').classList.add('done');
+    }
+
+    const obs=new IntersectionObserver(e=>{if(e[0].isIntersecting&&loaded<shuffled.length)loadMore()},{rootMargin:'200px'});
+    obs.observe(document.getElementById('loader'));
+
+    function openGame(g){
+        const m=document.getElementById('gameModal'),f=document.querySelector('.modal-frame'),
+              iframe=document.getElementById('gameIframe'),t=document.getElementById('modalTitle');
+        f.classList.remove('portrait','landscape');f.classList.add(g.orientation||'portrait');
+        t.textContent=g.name;iframe.src=g.url;
+        m.classList.add('open');requestAnimationFrame(()=>requestAnimationFrame(()=>m.classList.add('visible')));
+        document.body.style.overflow='hidden';
+    }
+
+    function closeGame(){
+        const m=document.getElementById('gameModal'),iframe=document.getElementById('gameIframe');
+        m.classList.remove('visible');
+        setTimeout(()=>{m.classList.remove('open');iframe.src='about:blank';document.body.style.overflow=''},250);
+    }
+
+    document.getElementById('gameModal').onclick=e=>{if(e.target.classList.contains('modal-overlay'))closeGame()};
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeGame()});
+    function toggleKofi(){document.getElementById('kofiPanel').classList.toggle('open');document.getElementById('kofiToggle').classList.toggle('active')}
+
+    loadMore();
     </script>
 </body>
 </html>`;
@@ -512,10 +660,15 @@ ${features}
 // ─── Generate ───
 console.log(`📝 Building blog from ${games.length} games...`);
 
-// Index
+// Index (Shipped page)
 const indexHtml = buildIndex(games);
 writeFileSync(join(outDir, 'index.html'), indexHtml);
 console.log('  ✅ index.html');
+
+// Prototype Gallery page
+const protoHtml = buildPrototypePage(games);
+writeFileSync(join(outDir, 'prototype.html'), protoHtml);
+console.log('  ✅ prototype.html');
 
 // Posts
 for (const g of games) {
@@ -529,7 +682,8 @@ for (const g of games) {
 function buildSitemap(games) {
     const today = new Date().toISOString().slice(0, 10);
     const urls = [
-        `  <url><loc>${SITE_URL}/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`
+        `  <url><loc>${SITE_URL}/</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+        `  <url><loc>${SITE_URL}/prototype.html</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>`
     ];
     for (const g of games) {
         const num = String(g.number).padStart(3, '0');

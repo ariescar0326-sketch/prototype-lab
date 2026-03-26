@@ -38,7 +38,9 @@
         "credits": [
             { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
-        "date": "2026-03"
+        "date": "2026-03",
+        "deployMode": "premium",
+        "orientation": "portrait"
     },
     {
         "number": 2,
@@ -79,7 +81,9 @@
         "credits": [
             { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
-        "date": "2026-03"
+        "date": "2026-03",
+        "deployMode": "premium",
+        "orientation": "portrait"
     },
     {
         "number": 3,
@@ -120,7 +124,9 @@
         "credits": [
             { "name": "@quaternius", "url": "https://quaternius.com/", "role": "3D models" }
         ],
-        "date": "2026-03"
+        "date": "2026-03",
+        "deployMode": "premium",
+        "orientation": "portrait"
     },
     {
         "number": 8,
@@ -160,6 +166,8 @@
             }
         ],
         "credits": [],
-        "date": "2026-03"
+        "date": "2026-03",
+        "deployMode": "premium",
+        "orientation": "portrait"
     }
 ]
